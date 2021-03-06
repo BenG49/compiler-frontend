@@ -2,7 +2,7 @@ package compiler.lexer;
 
 public class Token {
     public enum Type{
-        ERROR, INT, FLOAT, PLUS, MINUS, MUL, DIV, LPAREN, RPAREN
+        INT, FLOAT, PLUS, MINUS, MUL, DIV, LPAREN, RPAREN
     };
 
     private Type type;

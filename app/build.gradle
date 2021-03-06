@@ -40,3 +40,7 @@ application {
     // Define the main class for the application.
     mainClass = 'compiler.Main'
 }
+
+run {
+    standardInput = System.in;
+}

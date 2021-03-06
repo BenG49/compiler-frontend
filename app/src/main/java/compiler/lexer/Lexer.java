@@ -9,7 +9,7 @@ import compiler.lexer.Token.Type;
 public class Lexer {
 
     private static final HashMap<String, Type> OPERATORS;
-    private static final String DIGITS = "0123456789.f";
+    private static final String DIGITS = "0123456789.";
 
     static {
         OPERATORS = new HashMap<String, Type>();
@@ -21,51 +21,67 @@ public class Lexer {
         OPERATORS.put(")", Type.RPAREN);
     }
 
-    public static List<Token> lex(String input) {
+    private int index;
+    private final String input;
+
+    private StringBuilder numBuffer;
+    private int dotCount;
+
+    public Lexer(String input) {
+        index = 0;
+        this.input = input;
+
+        numBuffer = new StringBuilder();
+        dotCount = 0;
+    }
+
+    public List<Token> lex() throws Exception {
         // remove all spaces
         String filtered = input.replaceAll(" ", "");
         List<Token> output = new ArrayList<Token>();
 
-        // num buffer
-        StringBuilder currentElement = new StringBuilder();
-        int dotCount = 0;
-
-        for (int i = 0; i < filtered.length(); i++) {
-            String c = Character.toString(filtered.charAt(i));
+        while (index < filtered.length()) {
+            String c = Character.toString(filtered.charAt(index));
 
             // if operator
             if (OPERATORS.keySet().contains(c)) {
                 // clear current num buffer
-                if (currentElement.length() > 0) {
-                    output.add(stringToToken(currentElement.toString(), dotCount));
-                    currentElement.setLength(0);
-                    dotCount = 0;
-                }
+                if (numBuffer.length() > 0)
+                    emptyNumBuffer(output);
 
                 // add operator to output
                 output.add(new Token(OPERATORS.get(c)));
             // if digit
             } else if (DIGITS.contains(c)) {
                 // add to num buffer
-                currentElement.append(c);
+                numBuffer.append(c);
                 // increment dotcount
                 if (c.equals("."))
                     dotCount++;
-            }
+                // multiple dots
+                if (dotCount > 1)
+                    throw new IllegalCharacterException(c, index);
+            } else
+                throw new IllegalCharacterException(c, index);
 
             // clear num buffer if reached end of input
-            if (i == filtered.length()-1 && currentElement.length() > 0)
-                output.add(stringToToken(currentElement.toString(), dotCount));
+            if (index == filtered.length()-1 && numBuffer.length() > 0)
+                emptyNumBuffer(output);
+            
+            index++;
         }
 
         return output;
     }
 
-    private static Token stringToToken(String in, int dotCount) {
-        if (dotCount > 1)
-            return new Token(Type.ERROR, in);
+    private void emptyNumBuffer(List<Token> output) {
+        output.add(stringToToken(numBuffer.toString(), dotCount));
+        numBuffer.setLength(0);
+        dotCount = 0;
+    }
 
-        if (in.contains("f") || dotCount == 1)
+    private static Token stringToToken(String in, int dotCount) {
+        if (dotCount == 1)
             return new Token(Type.FLOAT, in);
 
         return new Token(Type.INT, in);

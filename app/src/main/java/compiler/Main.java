@@ -4,6 +4,11 @@ import compiler.lexer.Lexer;
 
 public class Main {
     public static void main(String[] args) {
-        System.out.println(Lexer.lex("100.5402/10.1*30+1f-1as"));
+        Lexer lexer = new Lexer("1+1");
+        try {
+            System.out.println(lexer.lex());
+        } catch (Exception e) {
+            System.out.println(e);
+        }
     }
 }
