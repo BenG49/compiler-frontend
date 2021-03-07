@@ -37,17 +37,18 @@ public class Lexer {
 
     public List<Token> lex() throws Exception {
         // remove all spaces
-        String filtered = input.replaceAll(" ", "");
         List<Token> output = new ArrayList<Token>();
 
-        while (index < filtered.length()) {
-            String c = Character.toString(filtered.charAt(index));
+        while (index < input.length()) {
+            String c = Character.toString(input.charAt(index));
 
-            // if operator
-            if (OPERATORS.keySet().contains(c)) {
+            // skip over spaces
+            if (c.equals(" "))
+                emptyNumBuffer(output);
+            // if character is operator
+            else if (OPERATORS.keySet().contains(c)) {
                 // clear current num buffer
-                if (numBuffer.length() > 0)
-                    emptyNumBuffer(output);
+                emptyNumBuffer(output);
 
                 // add operator to output
                 output.add(new Token(OPERATORS.get(c)));
@@ -65,7 +66,7 @@ public class Lexer {
                 throw new IllegalCharacterException(c, index);
 
             // clear num buffer if reached end of input
-            if (index == filtered.length()-1 && numBuffer.length() > 0)
+            if (index == input.length()-1)
                 emptyNumBuffer(output);
             
             index++;
@@ -75,9 +76,11 @@ public class Lexer {
     }
 
     private void emptyNumBuffer(List<Token> output) {
-        output.add(stringToToken(numBuffer.toString(), dotCount));
-        numBuffer.setLength(0);
-        dotCount = 0;
+        if (numBuffer.length() > 0) {
+            output.add(stringToToken(numBuffer.toString(), dotCount));
+            numBuffer.setLength(0);
+            dotCount = 0;
+        }
     }
 
     private static Token stringToToken(String in, int dotCount) {
