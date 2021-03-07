@@ -2,11 +2,13 @@ package compiler.lexer;
 
 public class Token {
     public enum Type{
-        INT, FLOAT, PLUS, MINUS, MUL, DIV, LPAREN, RPAREN
+        INT, FLOAT, STRING,
+        PLUS, MINUS, MUL, DIV,
+        LPAREN, RPAREN
     };
 
-    private Type type;
-    private String value;
+    public Type type;
+    public String value;
 
     public Token(Type type) { this(type, ""); }
     public Token(Type type, String value) {

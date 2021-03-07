@@ -1,8 +1,6 @@
 package compiler.lexer;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 import compiler.lexer.Token.Type;
 
@@ -24,69 +22,71 @@ public class Lexer {
     private int index;
     private final String input;
 
-    private StringBuilder numBuffer;
-    private int dotCount;
-
     public Lexer(String input) {
         index = 0;
         this.input = input;
-
-        numBuffer = new StringBuilder();
-        dotCount = 0;
     }
 
-    public List<Token> lex() throws Exception {
-        // remove all spaces
-        List<Token> output = new ArrayList<Token>();
+    public Token next() throws Exception {
+        if (!hasNext())
+            return null;
 
-        while (index < input.length()) {
-            String c = Character.toString(input.charAt(index));
+        String c = get(index);
 
-            // skip over spaces
-            if (c.equals(" "))
-                emptyNumBuffer(output);
-            // if character is operator
-            else if (OPERATORS.keySet().contains(c)) {
-                // clear current num buffer
-                emptyNumBuffer(output);
-
-                // add operator to output
-                output.add(new Token(OPERATORS.get(c)));
-            // if digit
-            } else if (DIGITS.contains(c)) {
-                // add to num buffer
-                numBuffer.append(c);
-                // increment dotcount
-                if (c.equals("."))
-                    dotCount++;
-                // multiple dots
-                if (dotCount > 1)
-                    throw new IllegalCharacterException(c, index);
-            } else
-                throw new IllegalCharacterException(c, index);
-
-            // clear num buffer if reached end of input
-            if (index == input.length()-1)
-                emptyNumBuffer(output);
-            
+        // Space
+        if (c.equals(" ")) {
             index++;
+            return next();
         }
 
-        return output;
-    }
-
-    private void emptyNumBuffer(List<Token> output) {
-        if (numBuffer.length() > 0) {
-            output.add(stringToToken(numBuffer.toString(), dotCount));
-            numBuffer.setLength(0);
-            dotCount = 0;
+        // Operators
+        if (OPERATORS.keySet().contains(c)) {
+            index++;
+            return new Token(OPERATORS.get(c));
         }
+            
+        // Number
+        if (DIGITS.contains(c)) {
+            StringBuilder number = new StringBuilder();
+            Type type = Type.INT;
+
+            while (hasNext() && DIGITS.contains(get(index))) {
+                if (get(index).equals("."))
+                    type = Type.FLOAT;
+                number.append(get(index++));
+            }
+
+            return new Token(type, number.toString());
+        }
+            
+        // String
+        if (c.equals("\"")) {
+            StringBuilder string = new StringBuilder();
+            // pass first quote
+            index++;
+            string.append("\"");
+            
+            while (hasNext() && !get(index).equals("\""))
+                string.append(get(index++));
+
+            if (!hasNext() && !get(index-1).equals("\""))
+                throw new Exception("Unexpected end of file, expected '\"'");
+
+            // pass second quote (so lexer doesn't start on ending quote)
+            index++;
+            string.append("\"");
+            
+            return new Token(Type.STRING, string.toString());
+        }
+
+        throw new Exception("Illegal character '"+c+"' at index "+index);
     }
 
-    private static Token stringToToken(String in, int dotCount) {
-        if (dotCount == 1)
-            return new Token(Type.FLOAT, in);
+    private String get(int index) {
+        return Character.toString(input.charAt(index));
+    }
 
-        return new Token(Type.INT, in);
+    public boolean hasNext() {
+        return index < input.length();
     }
 }
