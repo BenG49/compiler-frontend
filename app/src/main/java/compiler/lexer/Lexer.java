@@ -8,40 +8,53 @@ public class Lexer {
 
     private static final HashMap<String, Type> OPERATORS;
     private static final String DIGITS = "0123456789.";
-
+    
     static {
         OPERATORS = new HashMap<String, Type>();
         OPERATORS.put("+", Type.PLUS);
         OPERATORS.put("-", Type.MINUS);
         OPERATORS.put("*", Type.MUL);
         OPERATORS.put("/", Type.DIV);
-        OPERATORS.put("(", Type.LPAREN);
-        OPERATORS.put(")", Type.RPAREN);
+        OPERATORS.put("(", Type.LP);
+        OPERATORS.put(")", Type.RP);
     }
 
+    private int line;
     private int index;
-    private final String input;
+    private final String[] input;
+
+    private int prevIndex;
+    private int prevLine;
 
     public Lexer(String input) {
+        this(input.split("\\n"));
+    }
+    public Lexer(String[] input) {
         index = 0;
+        line = 0;
         this.input = input;
     }
 
     public Token next() throws Exception {
+        // End of file
         if (!hasNext())
             return null;
 
+        prevIndex = index;
+        prevLine = line;
         String c = get(index);
 
         // Space
         if (c.equals(" ")) {
-            index++;
+            inc();
+            checkNextLine();
             return next();
         }
 
         // Operators
         if (OPERATORS.keySet().contains(c)) {
-            index++;
+            inc();
+            checkNextLine();
             return new Token(OPERATORS.get(c));
         }
             
@@ -50,12 +63,14 @@ public class Lexer {
             StringBuilder number = new StringBuilder();
             Type type = Type.INT;
 
-            while (hasNext() && DIGITS.contains(get(index))) {
+            while (lineHasNext() && DIGITS.contains(get(index))) {
                 if (get(index).equals("."))
                     type = Type.FLOAT;
-                number.append(get(index++));
+                number.append(get(index));
+                inc();
             }
 
+            checkNextLine();
             return new Token(type, number.toString());
         }
             
@@ -76,6 +91,7 @@ public class Lexer {
             index++;
             string.append("\"");
             
+            checkNextLine();
             return new Token(Type.STRING, string.toString());
         }
 
@@ -83,10 +99,44 @@ public class Lexer {
     }
 
     private String get(int index) {
-        return Character.toString(input.charAt(index));
+        return Character.toString(input[line].charAt(index));
+    }
+
+    private void undo() {
+        index = prevIndex;
+        line = prevLine;
+    }
+    
+    private void inc() {
+        if (lineHasNext())
+            index++;
+        
+        else if (hasNext()) {
+            line++;
+            index = 0;
+        }
+    }
+
+    private void checkNextLine() {
+        if (!lineHasNext() && hasNext()) {
+            line++;
+            index = 0;
+        }
     }
 
     public boolean hasNext() {
-        return index < input.length();
+        return line < input.length;
+    }
+
+    public boolean lineHasNext() {
+        return index < input[line].length();
+    }
+
+    // TODO: cache the token
+    public Type nextType() throws Exception {
+        Type t =  next().type;
+        undo();
+
+        return t;
     }
 }

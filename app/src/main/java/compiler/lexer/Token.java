@@ -3,8 +3,8 @@ package compiler.lexer;
 public class Token {
     public enum Type{
         INT, FLOAT, STRING,
-        PLUS, MINUS, MUL, DIV,
-        LPAREN, RPAREN
+        PLUS, MINUS, MUL, DIV, EQUALS,
+        LP, RP
     };
 
     public Type type;
