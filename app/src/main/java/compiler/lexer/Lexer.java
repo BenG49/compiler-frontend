@@ -6,6 +6,10 @@ import compiler.lexer.Token.Type;
 
 public class Lexer {
 
+    /**
+     * TODO: make lexer support regex
+     */
+
     private static final HashMap<String, Type> OPERATORS;
     private static final String DIGITS = "0123456789.";
     
@@ -17,6 +21,7 @@ public class Lexer {
         OPERATORS.put("/", Type.DIV);
         OPERATORS.put("(", Type.LP);
         OPERATORS.put(")", Type.RP);
+        OPERATORS.put(";", Type.SEMI);
     }
 
     private int line;

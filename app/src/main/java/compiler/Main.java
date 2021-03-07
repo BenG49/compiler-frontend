@@ -1,6 +1,5 @@
 package compiler;
 
-import compiler.lexer.Lexer;
 import compiler.parser.Parser;
 
 public class Main {
@@ -8,8 +7,8 @@ public class Main {
         Parser p = new Parser();
         try {
             System.out.println(p.parse(String.join("\n"
-            , "10"
-            , "\"a\"")));
+            , "\"a\";"
+            , "10;")));
         } catch (Exception e) {
             System.out.println(e);
         }

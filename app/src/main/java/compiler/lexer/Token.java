@@ -4,7 +4,7 @@ public class Token {
     public enum Type{
         INT, FLOAT, STRING,
         PLUS, MINUS, MUL, DIV, EQUALS,
-        LP, RP
+        LP, RP, SEMI
     };
 
     public Type type;
