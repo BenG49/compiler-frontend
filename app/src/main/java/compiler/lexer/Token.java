@@ -4,11 +4,17 @@ public class Token {
     public enum Type{
         INT, FLOAT, STRING,
         PLUS, MINUS, MUL, DIV, EQUALS,
-        LP, RP, SEMI
+        LP, RP, SEMI,
+        NEWLINE
     };
 
     public Type type;
     public String value;
+
+    public Token(Token other) {
+        this.type = other.type;
+        this.value = other.value;
+    }
 
     public Token(Type type) { this(type, ""); }
     public Token(Type type, String value) {

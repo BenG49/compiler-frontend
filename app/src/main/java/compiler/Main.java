@@ -1,5 +1,7 @@
 package compiler;
 
+import compiler.exception.CompileException;
+import compiler.lexer.Lexer;
 import compiler.parser.Parser;
 
 public class Main {
@@ -7,10 +9,9 @@ public class Main {
         Parser p = new Parser();
         try {
             System.out.println(p.parse(String.join("\n"
-                , "\"a\""
-                , "10"
+                , "10+10"
             )));
-        } catch (Exception e) {
+        } catch (CompileException e) {
             System.out.println(e);
         }
     }

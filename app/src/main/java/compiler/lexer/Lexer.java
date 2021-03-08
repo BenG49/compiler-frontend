@@ -2,6 +2,7 @@ package compiler.lexer;
 
 import java.util.HashMap;
 
+import compiler.exception.*;
 import compiler.lexer.Token.Type;
 
 public class Lexer {
@@ -11,7 +12,7 @@ public class Lexer {
      */
 
     private static final HashMap<String, Type> OPERATORS;
-    private static final String DIGITS = "0123456789.";
+    private static final String DIGITS;
     
     static {
         OPERATORS = new HashMap<String, Type>();
@@ -22,44 +23,54 @@ public class Lexer {
         OPERATORS.put("(", Type.LP);
         OPERATORS.put(")", Type.RP);
         OPERATORS.put(";", Type.SEMI);
+
+        DIGITS = "0123456789.";
     }
 
     private int line;
     private int index;
-    private final String[] input;
+    private final String input;
 
-    private int prevIndex;
-    private int prevLine;
+    private Token nextToken;
 
-    public Lexer(String input) {
-        this(input.split("\\n"));
-    }
-    public Lexer(String[] input) {
+    public Lexer(String input) throws CompileException {
         index = 0;
         line = 0;
-        this.input = input;
+        // add newline at the end because newlines end statements
+        this.input = (input+"\n");
+
+        nextToken = nextToken();
     }
 
-    public Token next() throws Exception {
+    public Token next() throws CompileException {
+        Token out = new Token(nextToken);
+        nextToken = nextToken();
+        return out;
+    }
+
+    private Token nextToken() throws CompileException {
         // End of file
-        if (!hasNext())
+        if (!privateHasNext())
             return null;
 
-        prevIndex = index;
-        prevLine = line;
         String c = get(index);
+
+        // Newline
+        if (c.equals("\n")) {
+            index++;
+            line++;
+            return new Token(Type.NEWLINE);
+        }
 
         // Space
         if (c.equals(" ")) {
-            inc();
-            checkNextLine();
-            return next();
+            index++;
+            return nextToken();
         }
 
         // Operators
         if (OPERATORS.keySet().contains(c)) {
-            inc();
-            checkNextLine();
+            index++;
             return new Token(OPERATORS.get(c));
         }
             
@@ -68,14 +79,13 @@ public class Lexer {
             StringBuilder number = new StringBuilder();
             Type type = Type.INT;
 
-            while (lineHasNext() && DIGITS.contains(get(index))) {
+            while (privateHasNext() && DIGITS.contains(get(index))) {
                 if (get(index).equals("."))
                     type = Type.FLOAT;
                 number.append(get(index));
-                inc();
+                index++;
             }
 
-            checkNextLine();
             return new Token(type, number.toString());
         }
             
@@ -86,62 +96,42 @@ public class Lexer {
             index++;
             string.append("\"");
             
-            while (hasNext() && !get(index).equals("\""))
+            while (privateHasNext() && !get(index).equals("\""))
                 string.append(get(index++));
 
-            if (!hasNext() && !get(index-1).equals("\""))
-                throw new Exception("Unexpected end of file, expected '\"'");
+            if (!privateHasNext() && !get(index-1).equals("\""))
+                throw new EOFException("\"");
 
             // pass second quote (so lexer doesn't start on ending quote)
             index++;
             string.append("\"");
             
-            checkNextLine();
             return new Token(Type.STRING, string.toString());
         }
 
-        throw new Exception("Illegal character '"+c+"' at index "+index);
+        throw new IllegalCharacterException(c, index, line);
     }
 
     private String get(int index) {
-        return Character.toString(input[line].charAt(index));
+        return Character.toString(input.charAt(index));
     }
 
-    private void undo() {
-        index = prevIndex;
-        line = prevLine;
-    }
-    
-    private void inc() {
-        if (lineHasNext())
-            index++;
-        
-        else if (hasNext()) {
-            line++;
-            index = 0;
-        }
-    }
-
-    private void checkNextLine() {
-        if (!lineHasNext() && hasNext()) {
-            line++;
-            index = 0;
-        }
+    private boolean privateHasNext() {
+        return index < input.length();
     }
 
     public boolean hasNext() {
-        return line < input.length;
+        return privateHasNext() || nextToken != null;
     }
 
-    public boolean lineHasNext() {
-        return index < input[line].length();
+    public Type nextType() throws CompileException {
+        if (hasNext())
+            return nextToken.type;
+        else
+            return null;
     }
 
-    // TODO: cache the token
-    public Type nextType() throws Exception {
-        Type t =  next().type;
-        undo();
-
-        return t;
+    public int[] getCursor() {
+        return new int[] {index, line};
     }
 }

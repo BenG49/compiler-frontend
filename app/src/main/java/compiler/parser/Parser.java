@@ -1,19 +1,17 @@
 package compiler.parser;
 
+import compiler.exception.*;
 import compiler.lexer.*;
 import compiler.lexer.Token.Type;
 import compiler.parser.grammars.*;
 
 public class Parser {
-    public String[] s;
+    public String s;
     public Lexer l;
 
     public Parser() {}
 
-    public Node parse(String s) throws Exception {
-        return parse(s.split("\\n"));
-    }
-    public Node parse(String[] s) throws Exception {
+    public Node parse(String s) throws CompileException {
         this.s = s;
         l = new Lexer(s);
 
@@ -21,13 +19,17 @@ public class Parser {
         return Expressions.Program();
     }
 
-    public String tryNextToken(Type type) throws Exception {
+    public int getStatementCount() {
+        return s.split("\n").length;
+    }
+
+    public String tryNextToken(Type type) throws CompileException {
         Token t = l.next();
         if (t == null)
-            throw new Exception("Unexpected end of input, expected: "+type);
+            throw new EOFException(type+"");
         
         if (t.type != type)
-            throw new Exception("Incorrect token type "+t.type+" given, expected: "+type);
+            throw new TokenTypeException(t.type, type+"");
         
         return t.value;
     }

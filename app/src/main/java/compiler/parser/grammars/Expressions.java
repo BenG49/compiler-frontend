@@ -1,8 +1,10 @@
 package compiler.parser.grammars;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import compiler.exception.*;
 import compiler.lexer.Token.Type;
 import compiler.parser.Parser;
 
@@ -12,14 +14,13 @@ public class Expressions {
     public static void setParser(Parser p) {
         Expressions.p = p;
     }
-    // TODO: maybe add indentations
 
     /**
      * Program
      *  : StatementList
      *  ;
      */
-    public static Node<Node> Program() throws Exception {
+    public static Node<Node> Program() throws CompileException {
         return new Node<Node>(
             "Program",
             StatementList()
@@ -31,9 +32,9 @@ public class Expressions {
      *  : Statement -> Statement Statement
      *  ;
      */
-    public static Node<Node> StatementList() throws Exception {
+    public static Node<Node> StatementList() throws CompileException {
         List<Node> statements = new ArrayList<Node>();
-        for (int i = 0; i < p.s.length; i++)
+        for (int i = 0; i < p.getStatementCount(); i++)
             statements.add(Statement());
 
         return new Node<Node>(
@@ -44,35 +45,91 @@ public class Expressions {
 
     /**
      * Statement
-     *  : Literal
+     *  : BinaryExpression
+     *  & SEMI
      *  ;
      */
-    public static Node<Node> Statement() throws Exception {
+    public static Node<Node> Statement() throws CompileException {
+        Node<Node> out = BinaryExpression();
+        p.tryNextToken(Type.NEWLINE);
         return new Node<Node>(
             "Statement",
-            Literal()
+            out
+        );
+    }
+
+    /**
+     * BinaryExpression
+     *  : NumberLiteral
+     *  & Operator
+     *  & (NumberLiteral | BinaryExpression)
+     *  ;
+     */
+    public static Node<Node> BinaryExpression() throws CompileException {
+        List<Node> expression = new ArrayList<Node>(Arrays.asList(
+            NumberLiteral(),
+            Operator()));
+        
+        // TODO: make it so the lexer can look more than 1 token in the future
+        expression.add(NumberLiteral());
+
+        return new Node<Node>(
+            "BinaryExpression",
+            expression
+        );
+    }
+
+    /**
+     * Operator
+     *  : PLUS
+     *  | MINUS
+     *  | MUL
+     *  | DIV
+     *  ;
+     */
+    public static Node<String> Operator() throws CompileException {
+        Type nextType = p.l.nextType();
+        String out;
+
+        if (nextType == Type.PLUS || nextType == Type.MINUS || nextType == Type.MUL || nextType == Type.DIV) {
+            p.tryNextToken(nextType);
+            if (nextType == Type.PLUS)
+                out = "\"+\"";
+            else if (nextType == Type.MINUS)
+                out = "\"-\"";
+            else if (nextType == Type.MUL)
+                out = "\"*\"";
+            else
+                out = "\"/\"";
+        } else if (nextType == null)
+            throw new EOFException("Operator");
+        else
+            throw new TokenTypeException(nextType, "Operator");
+        
+        return new Node<String>(
+            "Operator",
+            out
         );
     }
 
     /**
      * Literal
      *  : IntLiteral
-     *  | StringLiteral
-     *  | FloatLiteral
+     *  | NumberLiteral
      *  ;
      */
-    public static Node<Node> Literal() throws Exception {
+    public static Node<Node> Literal() throws CompileException {
         Type nextType = p.l.nextType();
         Node literal;
 
-        if (nextType == Type.INT)
-            literal = IntLiteral();
-        if (nextType == Type.FLOAT)
-            literal = FloatLiteral();
-        if (nextType == Type.STRING)
+        if (nextType == Type.INT || nextType == Type.FLOAT)
+            literal = NumberLiteral();
+        else if (nextType == Type.STRING)
             literal = StringLiteral();
+        else if (nextType == null)
+            throw new EOFException("Operator");
         else
-            throw new Exception("Incorrect token type "+nextType+" given, expected Literal");
+            throw new TokenTypeException(nextType, "Literal");
 
         return new Node<Node>(
             "Literal",
@@ -85,10 +142,35 @@ public class Expressions {
      *  : STRING
      *  ;
      */
-    public static Node<String> StringLiteral() throws Exception {
+    public static Node<String> StringLiteral() throws CompileException {
         return new Node<String>(
             "StringLiteral",
             p.tryNextToken(Type.STRING)
+        );
+    }
+
+    /**
+     * NumberLiteral
+     *  : IntLiteral
+     *  | FloatLiteral
+     *  ;
+     */
+    public static Node<Node> NumberLiteral() throws CompileException {
+        Type nextType = p.l.nextType();
+        Node literal;
+
+        if (nextType == Type.INT)
+            literal = IntLiteral();
+        else if (nextType == Type.FLOAT)
+            literal = FloatLiteral();
+        else if (nextType == null)
+            throw new EOFException("Operator");
+        else
+            throw new TokenTypeException(nextType, "NumberLiteral");
+        
+        return new Node<Node>(
+            "NumberLiteral",
+            literal
         );
     }
 
@@ -97,7 +179,7 @@ public class Expressions {
      *  : INT
      *  ;
      */
-    public static Node<Integer> IntLiteral() throws Exception {
+    public static Node<Integer> IntLiteral() throws CompileException {
         return new Node<Integer>(
             "IntLiteral",
             Integer.parseInt(p.tryNextToken(Type.INT))
@@ -109,7 +191,7 @@ public class Expressions {
      *  : FLOAT
      *  ;
      */
-    public static Node<Float> FloatLiteral() throws Exception {
+    public static Node<Float> FloatLiteral() throws CompileException {
         return new Node<Float>(
             "FloatLiteral",
             Float.parseFloat(p.tryNextToken(Type.FLOAT))
