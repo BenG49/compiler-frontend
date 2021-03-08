@@ -10,15 +10,15 @@ public class Parser {
 
     public Parser() {}
 
-    public Exp parse(String s) throws Exception {
+    public Node parse(String s) throws Exception {
         return parse(s.split("\\n"));
     }
-    public Exp parse(String[] s) throws Exception {
+    public Node parse(String[] s) throws Exception {
         this.s = s;
         l = new Lexer(s);
 
         Expressions.setParser(this);
-        return new Expressions.Program();
+        return Expressions.Program();
     }
 
     public String tryNextToken(Type type) throws Exception {

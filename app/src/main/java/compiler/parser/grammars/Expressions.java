@@ -19,41 +19,27 @@ public class Expressions {
      *  : StatementList
      *  ;
      */
-    public static class Program extends Exp {
-        public String type = "Program";
-        public Exp body;
-        public Program() throws Exception {
-            body = new Expressions.StatementList(); }
-        @Override public String toString() {
-            return type+" {\n"+body+"\n}"; }
+    public static Node<Node> Program() throws Exception {
+        return new Node<Node>(
+            "Program",
+            StatementList()
+        );
     }
 
     /**
      * StatementList
-     *  : Statement
-     *  | Statement
-     *  ...
+     *  : Statement -> Statement Statement
      *  ;
      */
-    public static class StatementList extends Exp {
-        public String type = "StatementList";
-        public List<Statement> body;
-        public StatementList() throws Exception {
-            body = new ArrayList<Statement>();
-            for (int i = 0; i < p.s.length; i++)
-                body.add(new Expressions.Statement());
-        }
-        @Override public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append(type);
-            for (int i = 0; i < body.size(); i++) {
-                sb.append("{\n");
-                sb.append(body.get(i));
-                sb.append("\n}");
-            }
+    public static Node<Node> StatementList() throws Exception {
+        List<Node> statements = new ArrayList<Node>();
+        for (int i = 0; i < p.s.length; i++)
+            statements.add(Statement());
 
-            return sb.toString();
-        }
+        return new Node<Node>(
+            "StatementList",
+            statements
+        );
     }
 
     /**
@@ -61,13 +47,11 @@ public class Expressions {
      *  : Literal
      *  ;
      */
-    public static class Statement extends Exp {
-        public String type = "Statement";
-        public Exp body;
-        public Statement() throws Exception {
-            body = new Expressions.Literal(); }
-        @Override public String toString() {
-            return type+" {\n"+body+"\n}"; }
+    public static Node<Node> Statement() throws Exception {
+        return new Node<Node>(
+            "Statement",
+            Literal()
+        );
     }
 
     /**
@@ -77,22 +61,23 @@ public class Expressions {
      *  | FloatLiteral
      *  ;
      */
-    public static class Literal extends Exp {
-        public String type = "Literal";
-        public Exp body;
-        public Literal() throws Exception {
-            Type nextType = p.l.nextType();
-            if (nextType == Type.INT)
-                body = new Expressions.IntLiteral();
-            else if (nextType == Type.STRING)
-                body = new Expressions.StringLiteral();
-            else if (nextType == Type.FLOAT)
-                body = new Expressions.FloatLiteral();
-            else
-                throw new Exception("Incorrect token type "+nextType+" given, expected Literal");
-        }
-        @Override public String toString() {
-            return type+" {\n"+body+"\n}"; }
+    public static Node<Node> Literal() throws Exception {
+        Type nextType = p.l.nextType();
+        Node literal;
+
+        if (nextType == Type.INT)
+            literal = IntLiteral();
+        if (nextType == Type.FLOAT)
+            literal = FloatLiteral();
+        if (nextType == Type.STRING)
+            literal = StringLiteral();
+        else
+            throw new Exception("Incorrect token type "+nextType+" given, expected Literal");
+
+        return new Node<Node>(
+            "Literal",
+            literal
+        );
     }
 
     /**
@@ -100,13 +85,11 @@ public class Expressions {
      *  : STRING
      *  ;
      */
-    public static class StringLiteral extends Exp {
-        public String type = "StringLiteral";
-        public String value;
-        public StringLiteral() throws Exception {
-            value = p.tryNextToken(Type.STRING); }
-        @Override public String toString() {
-            return type+", "+value; }
+    public static Node<String> StringLiteral() throws Exception {
+        return new Node<String>(
+            "StringLiteral",
+            p.tryNextToken(Type.STRING)
+        );
     }
 
     /**
@@ -114,13 +97,11 @@ public class Expressions {
      *  : INT
      *  ;
      */
-    public static class IntLiteral extends Exp {
-        public String type = "IntLiteral";
-        public int value;
-        public IntLiteral() throws Exception {
-            value = Integer.parseInt(p.tryNextToken(Type.INT)); }
-        @Override public String toString() {
-            return type+", "+value; }
+    public static Node<Integer> IntLiteral() throws Exception {
+        return new Node<Integer>(
+            "IntLiteral",
+            Integer.parseInt(p.tryNextToken(Type.INT))
+        );
     }
 
     /**
@@ -128,13 +109,11 @@ public class Expressions {
      *  : FLOAT
      *  ;
      */
-    public static class FloatLiteral extends Exp {
-        public String type = "FloatLiteral";
-        public float value;
-        public FloatLiteral() throws Exception {
-            value = Float.parseFloat(p.tryNextToken(Type.FLOAT)); }
-        @Override public String toString() {
-            return type+", "+value; }
+    public static Node<Float> FloatLiteral() throws Exception {
+        return new Node<Float>(
+            "FloatLiteral",
+            Float.parseFloat(p.tryNextToken(Type.FLOAT))
+        );
     }
     
 }
