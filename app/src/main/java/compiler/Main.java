@@ -7,8 +7,9 @@ public class Main {
         Parser p = new Parser();
         try {
             System.out.println(p.parse(String.join("\n"
-            , "\"a\";"
-            , "10;")));
+                , "\"a\""
+                , "10"
+            )));
         } catch (Exception e) {
             System.out.println(e);
         }

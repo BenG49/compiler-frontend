@@ -21,7 +21,7 @@ public class Parser {
         return new Expressions.Program();
     }
 
-    public String eat(Type type) throws Exception {
+    public String tryNextToken(Type type) throws Exception {
         Token t = l.next();
         if (t == null)
             throw new Exception("Unexpected end of input, expected: "+type);

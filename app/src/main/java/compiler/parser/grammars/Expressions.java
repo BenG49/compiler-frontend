@@ -12,6 +12,7 @@ public class Expressions {
     public static void setParser(Parser p) {
         Expressions.p = p;
     }
+    // TODO: maybe add indentations
 
     /**
      * Program
@@ -24,7 +25,7 @@ public class Expressions {
         public Program() throws Exception {
             body = new Expressions.StatementList(); }
         @Override public String toString() {
-            return "type: "+type+"\nbody: {\n"+body+"\n}"; }
+            return type+" {\n"+body+"\n}"; }
     }
 
     /**
@@ -44,12 +45,10 @@ public class Expressions {
         }
         @Override public String toString() {
             StringBuilder sb = new StringBuilder();
-            sb.append("type: ");
             sb.append(type);
-            sb.append("\nbody");
-            for (Statement s : body) {
+            for (int i = 0; i < body.size(); i++) {
                 sb.append("{\n");
-                sb.append(s);
+                sb.append(body.get(i));
                 sb.append("\n}");
             }
 
@@ -65,12 +64,10 @@ public class Expressions {
     public static class Statement extends Exp {
         public String type = "Statement";
         public Exp body;
-        public String semi;
         public Statement() throws Exception {
-            body = new Expressions.Literal();
-            semi = p.eat(Type.SEMI); }
+            body = new Expressions.Literal(); }
         @Override public String toString() {
-            return "type: "+type+"\nbody: {\n"+body+"\n}"; }
+            return type+" {\n"+body+"\n}"; }
     }
 
     /**
@@ -95,7 +92,7 @@ public class Expressions {
                 throw new Exception("Incorrect token type "+nextType+" given, expected Literal");
         }
         @Override public String toString() {
-            return "type: "+type+"\nbody: {\n"+body+"\n}"; }
+            return type+" {\n"+body+"\n}"; }
     }
 
     /**
@@ -107,9 +104,9 @@ public class Expressions {
         public String type = "StringLiteral";
         public String value;
         public StringLiteral() throws Exception {
-            value = p.eat(Type.STRING); }
+            value = p.tryNextToken(Type.STRING); }
         @Override public String toString() {
-            return "\ttype: "+type+"\nvalue: "+value; }
+            return type+", "+value; }
     }
 
     /**
@@ -121,9 +118,9 @@ public class Expressions {
         public String type = "IntLiteral";
         public int value;
         public IntLiteral() throws Exception {
-            value = Integer.parseInt(p.eat(Type.INT)); }
+            value = Integer.parseInt(p.tryNextToken(Type.INT)); }
         @Override public String toString() {
-            return "\ttype: "+type+"\nvalue: "+value; }
+            return type+", "+value; }
     }
 
     /**
@@ -135,8 +132,9 @@ public class Expressions {
         public String type = "FloatLiteral";
         public float value;
         public FloatLiteral() throws Exception {
-            value = Float.parseFloat(p.eat(Type.FLOAT)); }
+            value = Float.parseFloat(p.tryNextToken(Type.FLOAT)); }
         @Override public String toString() {
-            return "\ttype: "+type+"\nvalue: "+value; }
+            return type+", "+value; }
     }
+    
 }
