@@ -18,7 +18,7 @@ public class Expressions {
      *  : StatementList
      *  ;
      */
-    public static class Program {
+    public static class Program extends Exp {
         public String type = "Program";
         public Exp body;
         public Program() throws Exception {
@@ -62,7 +62,7 @@ public class Expressions {
      *  : Literal
      *  ;
      */
-    public static class Statement {
+    public static class Statement extends Exp {
         public String type = "Statement";
         public Exp body;
         public String semi;
@@ -77,6 +77,7 @@ public class Expressions {
      * Literal
      *  : IntLiteral
      *  | StringLiteral
+     *  | FloatLiteral
      *  ;
      */
     public static class Literal extends Exp {
@@ -88,6 +89,8 @@ public class Expressions {
                 body = new Expressions.IntLiteral();
             else if (nextType == Type.STRING)
                 body = new Expressions.StringLiteral();
+            else if (nextType == Type.FLOAT)
+                body = new Expressions.FloatLiteral();
             else
                 throw new Exception("Incorrect token type "+nextType+" given, expected Literal");
         }
@@ -119,6 +122,20 @@ public class Expressions {
         public int value;
         public IntLiteral() throws Exception {
             value = Integer.parseInt(p.eat(Type.INT)); }
+        @Override public String toString() {
+            return "\ttype: "+type+"\nvalue: "+value; }
+    }
+
+    /**
+     * FloatLiteral
+     *  : FLOAT
+     *  ;
+     */
+    public static class FloatLiteral extends Exp {
+        public String type = "FloatLiteral";
+        public float value;
+        public FloatLiteral() throws Exception {
+            value = Float.parseFloat(p.eat(Type.FLOAT)); }
         @Override public String toString() {
             return "\ttype: "+type+"\nvalue: "+value; }
     }

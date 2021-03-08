@@ -1,10 +1,8 @@
 package compiler.parser;
 
-import compiler.lexer.Lexer;
-import compiler.lexer.Token;
+import compiler.lexer.*;
 import compiler.lexer.Token.Type;
-import compiler.parser.grammars.Expressions;
-import compiler.parser.grammars.Expressions.Program;
+import compiler.parser.grammars.*;
 
 public class Parser {
     public String[] s;
@@ -12,10 +10,10 @@ public class Parser {
 
     public Parser() {}
 
-    public Program parse(String s) throws Exception {
+    public Exp parse(String s) throws Exception {
         return parse(s.split("\\n"));
     }
-    public Program parse(String[] s) throws Exception {
+    public Exp parse(String[] s) throws Exception {
         this.s = s;
         l = new Lexer(s);
 
@@ -33,10 +31,4 @@ public class Parser {
         
         return t.value;
     }
-}
-
-abstract class Exp {
-    public abstract String toString();
-
-    public Exp() {}
 }
