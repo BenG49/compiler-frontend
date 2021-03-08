@@ -87,26 +87,19 @@ public class Expressions {
      *  | DIV
      *  ;
      */
-    public static Node<String> Operator() throws CompileException {
+    public static Node<Type> Operator() throws CompileException {
         Type nextType = p.l.nextType();
-        String out;
+        Type out;
 
         if (nextType == Type.PLUS || nextType == Type.MINUS || nextType == Type.MUL || nextType == Type.DIV) {
             p.tryNextToken(nextType);
-            if (nextType == Type.PLUS)
-                out = "\"+\"";
-            else if (nextType == Type.MINUS)
-                out = "\"-\"";
-            else if (nextType == Type.MUL)
-                out = "\"*\"";
-            else
-                out = "\"/\"";
+            out = nextType;
         } else if (nextType == null)
             throw new EOFException("Operator");
         else
             throw new TokenTypeException(nextType, "Operator");
         
-        return new Node<String>(
+        return new Node<Type>(
             "Operator",
             out
         );
