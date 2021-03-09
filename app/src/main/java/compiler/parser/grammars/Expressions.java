@@ -1,7 +1,6 @@
 package compiler.parser.grammars;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import compiler.exception.*;
@@ -16,101 +15,156 @@ public class Expressions {
     }
 
     /**
-     * Program
-     *  : StatementList
-     *  ;
+     * <program> := <statementlist>
      */
-    public static Node<Node> Program() throws CompileException {
-        return new Node<Node>(
+    public static Node Program() throws CompileException {
+        return new Node(
             "Program",
             StatementList()
         );
     }
 
     /**
-     * StatementList
-     *  : Statement -> Statement Statement
-     *  ;
+     * not actually how i'm implementing it, but this is cleaner
+     * 
+     * <statementlist> := <statement>
+     *                  | <statementlist>
      */
-    public static Node<Node> StatementList() throws CompileException {
+    public static Node StatementList() throws CompileException {
         List<Node> statements = new ArrayList<Node>();
         for (int i = 0; i < p.getStatementCount(); i++)
             statements.add(Statement());
 
-        return new Node<Node>(
+        return new Node(
             "StatementList",
             statements
         );
     }
 
     /**
-     * Statement
-     *  : BinaryExpression
-     *  ;
+     * <statement> := <binaryexpression>
      */
-    public static Node<Node> Statement() throws CompileException {
-        Node<Node> out = BinaryExpression();
+    public static Node Statement() throws CompileException {
+        Node out = BinaryExpression();
         p.tryNextToken(Type.NEWLINE);
-        return new Node<Node>(
+        return new Node(
             "Statement",
             out
         );
     }
 
     /**
-     * BinaryExpression
-     *  : NumberLiteral
-     *  & Operator
-     *  & (NumberLiteral | BinaryExpression)
-     *  ;
+     * https://stackoverflow.com/questions/9934553/extended-backus-naur-form-order-of-operations
+     * <binaryexpression> := (<addsuboperator>|"") <termexpression> (<addsuboperator> <termexpression>)*
      */
-    public static Node<Node> BinaryExpression() throws CompileException {
-        List<Node> expression = new ArrayList<Node>(Arrays.asList(
-            NumberLiteral(),
-            Operator()));
-        
-        // TODO: make it so the lexer can look more than 1 token in the future
-        expression.add(NumberLiteral());
+    public static Node BinaryExpression() throws CompileException {
+        List<Node> expression = new ArrayList<Node>();
+        Type nextType = p.l.nextType();
 
-        return new Node<Node>(
+        // "+", "-", or ""
+        if (nextType == Type.PLUS || nextType == Type.MINUS)
+            expression.add(AddSubOperator());
+        
+        expression.add(TermExpression());
+
+        nextType = p.l.nextType();
+        // while next type is plus or minus -> (<addsuboperator> <termexpression>)*
+        while (nextType == Type.PLUS || nextType == Type.MINUS) {
+            expression.add(AddSubOperator());
+            expression.add(TermExpression());
+
+            nextType = p.l.nextType();
+        }
+
+        return new Node(
             "BinaryExpression",
             expression
         );
     }
 
     /**
-     * Operator
-     *  : PLUS
-     *  | MINUS
-     *  | MUL
-     *  | DIV
-     *  ;
+     * <termexpression> := <factor> (<muldivoperator> <factor>)*
      */
-    public static Node<Type> Operator() throws CompileException {
-        Type nextType = p.l.nextType();
-        Type out;
+    public static Node TermExpression() throws CompileException {
+        List<Node> term = new ArrayList<Node>();
 
-        if (nextType == Type.PLUS || nextType == Type.MINUS || nextType == Type.MUL || nextType == Type.DIV) {
-            p.tryNextToken(nextType);
-            out = nextType;
-        } else if (nextType == null)
-            throw new EOFException("Operator");
-        else
-            throw new TokenTypeException(nextType, "Operator");
-        
-        return new Node<Type>(
-            "Operator",
-            out
+        term.add(Factor());
+
+        Type nextType = p.l.nextType();
+        // while next type is mul or div -> (<muldivoperator> <factor>)*
+        while (nextType == Type.MUL || nextType == Type.DIV) {
+            term.add(MulDivOperator());
+            term.add(Factor());
+
+            nextType = p.l.nextType();
+        }
+
+        return new Node(
+            "TermExpression",
+            term
         );
     }
 
     /**
-     * Literal
-     *  : IntLiteral
-     *  | NumberLiteral
-     *  ;
+     * <factor> := <variable> | <numberliteral> | <binaryexpression>
      */
-    public static Node<Node> Literal() throws CompileException {
+    public static Node Factor() throws CompileException {
+        Type nextType = p.l.nextType();
+        Node out;
+
+        // <numberliteral>
+        if (nextType == Type.INT || nextType == Type.FLOAT)
+            out = NumberLiteral();
+        // TODO: add variables
+        else
+            out = BinaryExpression();
+            // out = NumberLiteral();
+        
+        return new Node(
+            "Factor",
+            out
+        );
+    }
+    
+    /**
+     * <addsuboperator> := PLUS
+     *                   | MINUS
+     */
+    public static ValueNode<Type> AddSubOperator() throws CompileException {
+        Type nextType = p.l.nextType();
+
+        if (nextType == Type.PLUS || nextType == Type.MINUS) {
+            p.tryNextToken(nextType);
+            return new ValueNode<Type>(
+                "AddSubOperator",
+                nextType
+            );
+        } else
+            throw new TokenTypeException(nextType, "PLUS or MINUS", p.l.getPos());
+    }
+
+    /**
+     * <muldivoperator> := PLUS
+     *                   | MINUS
+     */
+    public static ValueNode<Type> MulDivOperator() throws CompileException {
+        Type nextType = p.l.nextType();
+
+        if (nextType == Type.MUL || nextType == Type.DIV) {
+            p.tryNextToken(nextType);
+            return new ValueNode<Type>(
+                "MulDivOperator",
+                nextType
+            );
+        } else
+            throw new TokenTypeException(nextType, "MUL or DIV", p.l.getPos());
+    }
+
+    /**
+     * <literal> := <intliteral>
+     *            | <numberliteral>
+     */
+    public static Node Literal() throws CompileException {
         Type nextType = p.l.nextType();
         Node literal;
 
@@ -121,33 +175,29 @@ public class Expressions {
         else if (nextType == null)
             throw new EOFException("Operator");
         else
-            throw new TokenTypeException(nextType, "Literal");
+            throw new TokenTypeException(nextType, "Literal", p.l.getPos());
 
-        return new Node<Node>(
+        return new Node(
             "Literal",
             literal
         );
     }
 
     /**
-     * StringLiteral
-     *  : STRING
-     *  ;
+     * <stringliteral> := STRING
      */
-    public static Node<String> StringLiteral() throws CompileException {
-        return new Node<String>(
+    public static ValueNode<String> StringLiteral() throws CompileException {
+        return new ValueNode<String>(
             "StringLiteral",
             p.tryNextToken(Type.STRING)
         );
     }
 
     /**
-     * NumberLiteral
-     *  : IntLiteral
-     *  | FloatLiteral
-     *  ;
+     * <numberliteral> := <intliteral>
+     *                  | <floatliteral>
      */
-    public static Node<Node> NumberLiteral() throws CompileException {
+    public static Node NumberLiteral() throws CompileException {
         Type nextType = p.l.nextType();
         Node literal;
 
@@ -158,33 +208,29 @@ public class Expressions {
         else if (nextType == null)
             throw new EOFException("Operator");
         else
-            throw new TokenTypeException(nextType, "NumberLiteral");
+            throw new TokenTypeException(nextType, "NumberLiteral", p.l.getPos());
         
-        return new Node<Node>(
+        return new Node(
             "NumberLiteral",
             literal
         );
     }
 
     /**
-     * IntLiteral
-     *  : INT
-     *  ;
+     * <intliteral> := INT
      */
-    public static Node<Integer> IntLiteral() throws CompileException {
-        return new Node<Integer>(
+    public static ValueNode<Integer> IntLiteral() throws CompileException {
+        return new ValueNode<Integer>(
             "IntLiteral",
             Integer.parseInt(p.tryNextToken(Type.INT))
         );
     }
 
     /**
-     * FloatLiteral
-     *  : FLOAT
-     *  ;
+     * <floatliteral> := FLOAT
      */
-    public static Node<Float> FloatLiteral() throws CompileException {
-        return new Node<Float>(
+    public static ValueNode<Float> FloatLiteral() throws CompileException {
+        return new ValueNode<Float>(
             "FloatLiteral",
             Float.parseFloat(p.tryNextToken(Type.FLOAT))
         );

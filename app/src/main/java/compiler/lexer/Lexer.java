@@ -19,6 +19,9 @@ public class Lexer {
     private final Matcher input;
 
     private Token nextToken;
+    // TODO: make it so that line count is incremented in multiline comments, strings, etc
+    private int line;
+    private int index;
 
     public Lexer(String input) throws CompileException {
         if (input.endsWith("\n"))
@@ -41,24 +44,32 @@ public class Lexer {
 
     private Token nextToken() throws CompileException {
         // Comments
-        input.usePattern(Type.BLOCKCOMMENT.getPattern());
-        input.find();
-        input.usePattern(Type.LINECOMMENT.getPattern());
-        input.find();
+        // TODO: make these actually work
+        // input.usePattern(Type.BLOCKCOMMENT.getPattern());
+        // input.find();
+        // input.usePattern(Type.LINECOMMENT.getPattern());
+        // input.find();
 
         // Inc line count
         input.usePattern(Type.NEWLINE.getPattern());
-        if (input.find())
+        if (input.find()) {
+            line++;
+            index = 0;
             return new Token(Type.NEWLINE);
+        }
 
         // Skip spaces
         input.usePattern(SPACE);
-        input.find();
+        if (input.find())
+            index++;
         
         for (Type t : Type.getAllOf()) {
             input.usePattern(t.getPattern());
-            if (input.find())
-                return new Token(t, input.group());
+            if (input.find()) {
+                String group = input.group();
+                index += group.length();
+                return new Token(t, group);
+            }
         }
 
         // No match
@@ -67,5 +78,9 @@ public class Lexer {
 
     public boolean hasNext() {
         return nextToken != null;
+    }
+
+    public int[] getPos() {
+        return new int[] {line, index};
     }
 }

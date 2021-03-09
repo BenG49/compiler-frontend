@@ -8,8 +8,18 @@ public class TokenTypeException extends CompileException {
 
     private String string;
 
-    public TokenTypeException(Type given, String expected) {
-        this.string = "Incorrect token type "+given+" given, expected "+expected;
+    public TokenTypeException(Type given, String expected, int[] pos) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Incorrect token type ");
+        sb.append(given);
+        sb.append(" given, expected ");
+        sb.append(expected);
+        sb.append(" at line ");
+        sb.append(pos[0]);
+        sb.append(", index ");
+        sb.append(pos[1]);
+
+        this.string = sb.toString();
     }
 
     @Override

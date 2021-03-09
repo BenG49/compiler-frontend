@@ -7,13 +7,14 @@ import compiler.parser.Parser;
 public class Main {
     private static final String PATH = "/home/bg/code";
     public static void main(String[] args) {
-        testLexer();
+        // testLexer();
+        testParser();
     }
 
     public static void testParser() {
-        Parser p = new Parser();
+        Parser p = new Parser(Reader.readFile(PATH));
         try {
-            System.out.println(p.parse(Reader.readFile(PATH)));
+            System.out.println(p.parse());
         } catch (CompileException e) {
             System.out.println(e);
         }

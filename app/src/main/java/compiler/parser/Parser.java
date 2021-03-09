@@ -9,10 +9,11 @@ public class Parser {
     public String s;
     public Lexer l;
 
-    public Parser() {}
-
-    public Node parse(String s) throws CompileException {
+    public Parser(String s) {
         this.s = s;
+    }
+
+    public Node parse() throws CompileException {
         l = new Lexer(s);
 
         Expressions.setParser(this);
@@ -29,7 +30,7 @@ public class Parser {
             throw new EOFException(type+"");
         
         if (t.type != type)
-            throw new TokenTypeException(t.type, type+"");
+            throw new TokenTypeException(t.type, type+"", l.getPos());
         
         return t.value;
     }
