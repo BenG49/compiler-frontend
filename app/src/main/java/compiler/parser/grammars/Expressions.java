@@ -32,18 +32,13 @@ public class Expressions {
      */
     public static Node StatementList() throws ParseException {
         List<Node> statements = new ArrayList<Node>();
-        for (int i = 0; i < p.getStatementCount(); i++) {
-            try {
-                Type nextType = p.l.nextType();
-                if (nextType != Type.NEWLINE)
-                    statements.add(Statement());
-                else
-                    p.tryNextToken(nextType);
-            } catch (NullPointerException e) {
-                // TODO: fix this
-                // number of lines may be more than number of statements due to multiline comments
-                break;
-            }
+        while (p.l.hasNext()) {
+            Type nextType = p.l.nextType();
+            // skip blank lines
+            if (nextType != Type.NEWLINE)
+                statements.add(Statement());
+            else
+                p.tryNextToken(nextType);
         }
 
         return new Node(

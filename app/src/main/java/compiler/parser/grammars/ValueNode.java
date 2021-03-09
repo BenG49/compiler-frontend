@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Node of an AST tree, also serves as a grammar
+ * Base node of an AST tree
  */
 public class ValueNode<E> extends Node {
     public List<E> value;
