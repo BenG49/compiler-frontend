@@ -4,21 +4,25 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class Node {
-    public String type;
-    public List<Node> value;
+/**
+ * Node of an AST tree, also serves as a grammar
+ */
+public class ValueNode<E> extends Node {
+    public List<E> value;
 
-    public Node(String type, Node value) {
-        this(type, new ArrayList<Node>(Arrays.asList(value)));
+    public ValueNode(String type, E value) {
+        this(type, new ArrayList<E>(Arrays.asList(value)));
     }
-    public Node(String type, List<Node> value) {
-        this.type = type;
+    public ValueNode(String type, List<E> value) {
+        super(type, new ArrayList<Node>());
         this.value = value;
     }
 
+    @Override
     public String toString() {
         return toString(0);
     }
+    @Override
     public String toString(int depth) {
         StringBuilder sb = new StringBuilder();
 
@@ -26,8 +30,10 @@ public class Node {
         sb.append(type);
         sb.append("{\n");
 
-        for (Node n : value)
-            sb.append(n.toString(depth+1)+"\n");
+        for (E e : value) {
+            tabs(sb, depth+1);
+            sb.append(e+"\n");
+        }
 
         tabs(sb, depth);
         sb.append("}");
