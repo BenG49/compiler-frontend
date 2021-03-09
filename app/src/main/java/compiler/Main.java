@@ -1,6 +1,6 @@
 package compiler;
 
-import compiler.exception.CompileException;
+import compiler.exception.ParseException;
 import compiler.lexer.Lexer;
 import compiler.parser.Parser;
 
@@ -15,7 +15,7 @@ public class Main {
         Parser p = new Parser(Reader.readFile(PATH));
         try {
             System.out.println(p.parse());
-        } catch (CompileException e) {
+        } catch (ParseException e) {
             System.out.println(e);
         }
     }
@@ -25,7 +25,7 @@ public class Main {
             Lexer l = new Lexer(Reader.readFile(PATH));
             while (l.hasNext())
                 System.out.println(l.next());
-        } catch (CompileException e) {
+        } catch (ParseException e) {
             System.out.println(e);
         }
     }

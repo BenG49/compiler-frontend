@@ -9,13 +9,12 @@ public class Token {
 
         BLOCKCOMMENT(   "\\G\\/\\*(\\*(?!\\/)|[^*])*\\*\\/"),
         // TODO: does not remove newline character
-        LINECOMMENT(    "\\G\\/\\/.+"),
+        LINECOMMENT(    "\\G\\/\\/.*+\n"),
 
         INT(    "\\G\\d+"),
         FLOAT(  "\\G\\d+[.]\\d+"),
         // https://stackoverflow.com/questions/171480/regex-grabbing-values-between-quotation-marks
-        STRING( "\\G\"(.*?)\""),
-        KEYWORD("\\G((int)|(float)|(bool)|(str))"),
+        STR( "\\G\"(.*?)\""),
         PLUS(   "\\G\\+"),
         MINUS(  "\\G\\-"),
         MUL(    "\\G\\*"),
@@ -24,6 +23,13 @@ public class Token {
         LP(     "\\G\\("),
         RP(     "\\G\\)"),
         SEMI(   "\\G;"),
+        
+        // reserved words
+        INT_KEY("\\G(int)"),
+        FLOAT_KEY("\\G(float)"),
+        STRING_KEY("\\G(str)"),
+        IF("\\G(if)"),
+        ELSE("\\G(if)"),
 
         NEWLINE("\\G(\r\n|\r|\n)");
 

@@ -17,7 +17,7 @@ public class Expressions {
     /**
      * <program> := <statementlist>
      */
-    public static Node Program() throws CompileException {
+    public static Node Program() throws ParseException {
         return new Node(
             "Program",
             StatementList()
@@ -30,10 +30,21 @@ public class Expressions {
      * <statementlist> := <statement>
      *                  | <statementlist>
      */
-    public static Node StatementList() throws CompileException {
+    public static Node StatementList() throws ParseException {
         List<Node> statements = new ArrayList<Node>();
-        for (int i = 0; i < p.getStatementCount(); i++)
-            statements.add(Statement());
+        for (int i = 0; i < p.getStatementCount(); i++) {
+            try {
+                Type nextType = p.l.nextType();
+                if (nextType != Type.NEWLINE)
+                    statements.add(Statement());
+                else
+                    p.tryNextToken(nextType);
+            } catch (NullPointerException e) {
+                // TODO: fix this
+                // number of lines may be more than number of statements due to multiline comments
+                break;
+            }
+        }
 
         return new Node(
             "StatementList",
@@ -43,10 +54,13 @@ public class Expressions {
 
     /**
      * <statement> := <binaryexpression>
+     *              | <ifexpression>
+     *              | ""
      */
-    public static Node Statement() throws CompileException {
+    public static Node Statement() throws ParseException {
         Node out = BinaryExpression();
         p.tryNextToken(Type.NEWLINE);
+
         return new Node(
             "Statement",
             out
@@ -54,10 +68,16 @@ public class Expressions {
     }
 
     /**
+     * <ifstatement> := "IF" "LP" <binaryexpression> "RP"
+     */
+    // public static Node IfStatement() throws ParseException {
+    // }
+
+    /**
      * https://stackoverflow.com/questions/9934553/extended-backus-naur-form-order-of-operations
      * <binaryexpression> := (<addsuboperator>|"") <termexpression> (<addsuboperator> <termexpression>)*
      */
-    public static Node BinaryExpression() throws CompileException {
+    public static Node BinaryExpression() throws ParseException {
         List<Node> expression = new ArrayList<Node>();
         Type nextType = p.l.nextType();
 
@@ -85,7 +105,7 @@ public class Expressions {
     /**
      * <termexpression> := <factor> (<muldivoperator> <factor>)*
      */
-    public static Node TermExpression() throws CompileException {
+    public static Node TermExpression() throws ParseException {
         List<Node> term = new ArrayList<Node>();
 
         term.add(Factor());
@@ -108,7 +128,7 @@ public class Expressions {
     /**
      * <factor> := <variable> | <numberliteral> | <binaryexpression>
      */
-    public static Node Factor() throws CompileException {
+    public static Node Factor() throws ParseException {
         Type nextType = p.l.nextType();
         Node out;
 
@@ -118,7 +138,6 @@ public class Expressions {
         // TODO: add variables
         else
             out = BinaryExpression();
-            // out = NumberLiteral();
         
         return new Node(
             "Factor",
@@ -130,7 +149,7 @@ public class Expressions {
      * <addsuboperator> := PLUS
      *                   | MINUS
      */
-    public static ValueNode<Type> AddSubOperator() throws CompileException {
+    public static ValueNode<Type> AddSubOperator() throws ParseException {
         Type nextType = p.l.nextType();
 
         if (nextType == Type.PLUS || nextType == Type.MINUS) {
@@ -147,7 +166,7 @@ public class Expressions {
      * <muldivoperator> := PLUS
      *                   | MINUS
      */
-    public static ValueNode<Type> MulDivOperator() throws CompileException {
+    public static ValueNode<Type> MulDivOperator() throws ParseException {
         Type nextType = p.l.nextType();
 
         if (nextType == Type.MUL || nextType == Type.DIV) {
@@ -164,13 +183,13 @@ public class Expressions {
      * <literal> := <intliteral>
      *            | <numberliteral>
      */
-    public static Node Literal() throws CompileException {
+    public static Node Literal() throws ParseException {
         Type nextType = p.l.nextType();
         Node literal;
 
         if (nextType == Type.INT || nextType == Type.FLOAT)
             literal = NumberLiteral();
-        else if (nextType == Type.STRING)
+        else if (nextType == Type.STR)
             literal = StringLiteral();
         else if (nextType == null)
             throw new EOFException("Operator");
@@ -186,10 +205,10 @@ public class Expressions {
     /**
      * <stringliteral> := STRING
      */
-    public static ValueNode<String> StringLiteral() throws CompileException {
+    public static ValueNode<String> StringLiteral() throws ParseException {
         return new ValueNode<String>(
             "StringLiteral",
-            p.tryNextToken(Type.STRING)
+            p.tryNextToken(Type.STR)
         );
     }
 
@@ -197,7 +216,7 @@ public class Expressions {
      * <numberliteral> := <intliteral>
      *                  | <floatliteral>
      */
-    public static Node NumberLiteral() throws CompileException {
+    public static Node NumberLiteral() throws ParseException {
         Type nextType = p.l.nextType();
         Node literal;
 
@@ -219,7 +238,7 @@ public class Expressions {
     /**
      * <intliteral> := INT
      */
-    public static ValueNode<Integer> IntLiteral() throws CompileException {
+    public static ValueNode<Integer> IntLiteral() throws ParseException {
         return new ValueNode<Integer>(
             "IntLiteral",
             Integer.parseInt(p.tryNextToken(Type.INT))
@@ -229,7 +248,7 @@ public class Expressions {
     /**
      * <floatliteral> := FLOAT
      */
-    public static ValueNode<Float> FloatLiteral() throws CompileException {
+    public static ValueNode<Float> FloatLiteral() throws ParseException {
         return new ValueNode<Float>(
             "FloatLiteral",
             Float.parseFloat(p.tryNextToken(Type.FLOAT))

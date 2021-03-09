@@ -1,6 +1,6 @@
 package compiler.exception;
 
-public class IllegalCharacterException extends CompileException {
+public class IllegalCharacterException extends ParseException {
 
     private static final long serialVersionUID = 1L;
 

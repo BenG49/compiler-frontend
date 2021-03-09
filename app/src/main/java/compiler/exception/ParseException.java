@@ -1,5 +1,5 @@
 package compiler.exception;
 
-public class CompileException extends Exception {
+public class ParseException extends Exception {
     private static final long serialVersionUID = 1L;
 }

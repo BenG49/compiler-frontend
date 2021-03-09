@@ -13,7 +13,7 @@ public class Parser {
         this.s = s;
     }
 
-    public Node parse() throws CompileException {
+    public Node parse() throws ParseException {
         l = new Lexer(s);
 
         Expressions.setParser(this);
@@ -24,7 +24,7 @@ public class Parser {
         return s.split("\n").length;
     }
 
-    public String tryNextToken(Type type) throws CompileException {
+    public String tryNextToken(Type type) throws ParseException {
         Token t = l.next();
         if (t == null)
             throw new EOFException(type+"");

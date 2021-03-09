@@ -2,7 +2,7 @@ package compiler.exception;
 
 import compiler.lexer.Token.Type;
 
-public class TokenTypeException extends CompileException {
+public class TokenTypeException extends ParseException {
 
     private static final long serialVersionUID = 1L;
 
