@@ -1,7 +1,5 @@
 package compiler.lexer;
 
-import java.util.EnumSet;
-import java.util.LinkedHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -18,17 +16,11 @@ public class Lexer {
         SPACE = Pattern.compile("\\G\\s+");
     }
 
-    private int line;
-    private int index;
-    private final String inputString;
     private final Matcher input;
 
     private Token nextToken;
 
     public Lexer(String input) throws CompileException {
-        index = 0;
-        line = 0;
-        this.inputString = input;
         if (input.endsWith("\n"))
             this.input = END.matcher(input);
         else
@@ -48,26 +40,25 @@ public class Lexer {
     }
 
     private Token nextToken() throws CompileException {
+        // Comments
+        input.usePattern(Type.BLOCKCOMMENT.getPattern());
+        input.find();
+        input.usePattern(Type.LINECOMMENT.getPattern());
+        input.find();
+
         // Inc line count
         input.usePattern(Type.NEWLINE.getPattern());
-        if (input.find()) {
-            line++;
+        if (input.find())
             return new Token(Type.NEWLINE);
-        }
 
         // Skip spaces
         input.usePattern(SPACE);
-        if (input.find())
-            index += input.group().length();
+        input.find();
         
         for (Type t : Type.getAllOf()) {
             input.usePattern(t.getPattern());
-
-            if (input.find()) {
-                String group = input.group();
-                index += group.length();
-                return new Token(t, group);
-            }
+            if (input.find())
+                return new Token(t, input.group());
         }
 
         // No match

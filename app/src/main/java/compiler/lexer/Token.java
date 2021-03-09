@@ -7,12 +7,12 @@ public class Token {
     public enum Type {
         // https://regexr.com
 
-        // TODO: add comments
-        // LINECOMMENT("\\G\\/\\/[^\n\r]+?(?:\\*\\)|[\n\r])"),
+        BLOCKCOMMENT("\\G\\/\\*(\\*(?!\\/)|[^*])*\\*\\/"),
+        LINECOMMENT("\\G\\/\\/.+"),
+
         INT("\\G\\d+"),
         FLOAT("\\G\\d+[.]\\d+"),
         // https://stackoverflow.com/questions/171480/regex-grabbing-values-between-quotation-marks
-        // TODO: does not support \"
         STRING("\\G\"(.*?)\""),
         // KEYWORD(),
         PLUS("\\G\\+"),
@@ -23,6 +23,7 @@ public class Token {
         LP("\\G\\("),
         RP("\\G\\)"),
         SEMI("\\G;"),
+
         NEWLINE("\\G(\r\n|\r|\n)");
 
         private static final EnumSet<Type> allOf;
