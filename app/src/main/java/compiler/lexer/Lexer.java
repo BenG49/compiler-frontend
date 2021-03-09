@@ -1,44 +1,39 @@
 package compiler.lexer;
 
-import java.util.HashMap;
+import java.util.EnumSet;
+import java.util.LinkedHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import compiler.exception.*;
+import compiler.exception.CompileException;
 import compiler.lexer.Token.Type;
 
 public class Lexer {
 
-    /**
-     * TODO: make lexer support regex
-     */
-
-    private static final HashMap<String, Type> OPERATORS;
-    private static final String DIGITS;
+    private static final Pattern END;
+    private static final Pattern SPACE;
     
     static {
-        OPERATORS = new HashMap<String, Type>();
-        OPERATORS.put("+", Type.PLUS);
-        OPERATORS.put("-", Type.MINUS);
-        OPERATORS.put("*", Type.MUL);
-        OPERATORS.put("/", Type.DIV);
-        OPERATORS.put("(", Type.LP);
-        OPERATORS.put(")", Type.RP);
-        OPERATORS.put(";", Type.SEMI);
-
-        DIGITS = "0123456789.";
+        END = Pattern.compile("\\G\\z");
+        SPACE = Pattern.compile("\\G\\s+");
     }
 
     private int line;
     private int index;
-    private final String input;
+    private final String inputString;
+    private final Matcher input;
 
     private Token nextToken;
 
     public Lexer(String input) throws CompileException {
         index = 0;
         line = 0;
-        // add newline at the end because newlines end statements
-        this.input = (input+"\n");
-
+        this.inputString = input;
+        if (input.endsWith("\n"))
+            this.input = END.matcher(input);
+        else
+            this.input = END.matcher(input+"\n");
+        
         nextToken = nextToken();
     }
 
@@ -48,90 +43,38 @@ public class Lexer {
         return out;
     }
 
+    public Type nextType() {
+        return nextToken.type;
+    }
+
     private Token nextToken() throws CompileException {
-        // End of file
-        if (!privateHasNext())
-            return null;
-
-        String c = get(index);
-
-        // Newline
-        if (c.equals("\n")) {
-            index++;
+        // Inc line count
+        input.usePattern(Type.NEWLINE.getPattern());
+        if (input.find()) {
             line++;
             return new Token(Type.NEWLINE);
         }
 
-        // Space
-        if (c.equals(" ")) {
-            index++;
-            return nextToken();
-        }
+        // Skip spaces
+        input.usePattern(SPACE);
+        if (input.find())
+            index += input.group().length();
+        
+        for (Type t : Type.getAllOf()) {
+            input.usePattern(t.getPattern());
 
-        // Operators
-        if (OPERATORS.keySet().contains(c)) {
-            index++;
-            return new Token(OPERATORS.get(c));
-        }
-            
-        // Number
-        if (DIGITS.contains(c)) {
-            StringBuilder number = new StringBuilder();
-            Type type = Type.INT;
-
-            while (privateHasNext() && DIGITS.contains(get(index))) {
-                if (get(index).equals("."))
-                    type = Type.FLOAT;
-                number.append(get(index));
-                index++;
+            if (input.find()) {
+                String group = input.group();
+                index += group.length();
+                return new Token(t, group);
             }
-
-            return new Token(type, number.toString());
-        }
-            
-        // String
-        if (c.equals("\"")) {
-            StringBuilder string = new StringBuilder();
-            // pass first quote
-            index++;
-            string.append("\"");
-            
-            while (privateHasNext() && !get(index).equals("\""))
-                string.append(get(index++));
-
-            if (!privateHasNext() && !get(index-1).equals("\""))
-                throw new EOFException("\"");
-
-            // pass second quote (so lexer doesn't start on ending quote)
-            index++;
-            string.append("\"");
-            
-            return new Token(Type.STRING, string.toString());
         }
 
-        throw new IllegalCharacterException(c, index, line);
-    }
-
-    private String get(int index) {
-        return Character.toString(input.charAt(index));
-    }
-
-    private boolean privateHasNext() {
-        return index < input.length();
+        // No match
+        return null;
     }
 
     public boolean hasNext() {
-        return privateHasNext() || nextToken != null;
-    }
-
-    public Type nextType() throws CompileException {
-        if (hasNext())
-            return nextToken.type;
-        else
-            return null;
-    }
-
-    public int[] getCursor() {
-        return new int[] {index, line};
+        return nextToken != null;
     }
 }

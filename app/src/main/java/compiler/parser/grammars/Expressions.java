@@ -46,7 +46,6 @@ public class Expressions {
     /**
      * Statement
      *  : BinaryExpression
-     *  & SEMI
      *  ;
      */
     public static Node<Node> Statement() throws CompileException {
