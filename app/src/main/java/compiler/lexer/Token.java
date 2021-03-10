@@ -36,7 +36,7 @@ public class Token {
         // reserved words
         INT_ID("\\G(int)"),
         FLOAT_ID("\\G(float)"),
-        STRING_ID("\\G(str)"),
+        STR_ID("\\G(str)"),
         IF("\\G(if)"),
         ELSE("\\G(if)"),
         TRUE("\\G(true)"),
@@ -64,6 +64,19 @@ public class Token {
 
         public static EnumSet<Type> getAllOf() {
             return allOf;
+        }
+
+        public static Type[] getVarTypes() {
+            return new Type[] { INT_ID, FLOAT_ID, STR_ID };
+        }
+
+        public boolean within(Type... types) {
+            for (Type t:types) {
+                if (this == t)
+                    return true;
+            }
+            
+            return false;
         }
     };
 
