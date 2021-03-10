@@ -1,4 +1,4 @@
-package compiler.parser.grammars;
+package compiler.parser.grammars.expressions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -6,31 +6,27 @@ import java.util.List;
 import compiler.exception.*;
 import compiler.lexer.Token.Type;
 import compiler.parser.Parser;
+import compiler.parser.grammars.Node;
+import compiler.parser.grammars.ValueNode;
 
 public class Expressions {
-    private static Parser p;
-
-    public static void setParser(Parser p) {
-        Expressions.p = p;
-    }
-
     /**
      * program := statementlist
      */
-    public static Node Program() throws ParseException {
+    public static Node Program(Parser p) throws ParseException {
         return new Node(
             "Program",
-            StatementList()
+            StatementList(p)
         );
     }
 
     /**
      * statementlist := statement...
      */
-    public static Node StatementList() throws ParseException {
+    public static Node StatementList(Parser p) throws ParseException {
         List<Node> statements = new ArrayList<Node>();
         while (p.l.hasNext()) {
-            Node temp = Statement();
+            Node temp = Statement(p);
             if (temp != null)
                 statements.add(temp);
         }
@@ -49,22 +45,22 @@ public class Expressions {
      *                | ""
      *              NEWLINE
      */
-    public static Node Statement() throws ParseException {
+    public static Node Statement(Parser p) throws ParseException {
         Node out;
         Type nextType = p.l.nextType();
 
         // ifexpression
         if (nextType == Type.IF)
-            out = IfExpression();
+            out = IfExpression(p);
         // binaryexpression
         else if (nextType.within(Type.INT, Type.FLOAT, Type.PLUS, Type.MINUS))
-            out = BinaryExpression();
+            out = BinaryExpression(p);
         // declareexpression
         else if (nextType.within(Type.getVarTypes()))
-            out = DeclareExpression();
+            out = DeclareExpression(p);
         // assignexpression
         else if (nextType == Type.VAR)
-            out = AssignExpression();
+            out = AssignExpression(p);
         else {
             p.tryNextToken(Type.NEWLINE);
             return null;
@@ -79,18 +75,47 @@ public class Expressions {
     }
 
     /**
+     * evalblockstatement := BLOCK_TYPE LP boolexpression RP LB statement... RB
+     */
+    public static Node EvalBlockStatement(Parser p, Type blockType) throws ParseException {
+        List<Node> out = new ArrayList<Node>();
+
+        p.tryNextToken(blockType);
+        p.tryNextToken(Type.LP);
+        out.add(BoolExpression(p));
+        p.tryNextToken(Type.RP);
+        p.tryNextToken(Type.LB);
+
+        // while the type isn't RB
+        Type nextType = p.l.nextType();
+        while (nextType != Type.RB) {
+            Node temp = Statement(p);
+            if (temp != null)
+                out.add(temp);
+            nextType = p.l.nextType();
+        }
+
+        p.tryNextToken(Type.RB);
+
+        return new Node(
+            "EvalBlockStatement: "+blockType,
+            out
+        );
+    }
+
+    /**
      * declareexpression := vartypeliteral variable
      *                          ""
      *                        | EQUALS 
      *                              binaryexpression
      *                            | stringliteral
      */
-    public static Node DeclareExpression() throws ParseException {
+    public static Node DeclareExpression(Parser p) throws ParseException {
         List<Node> out = new ArrayList<Node>();
         // <vartypeliteral>
-        out.add(VarTypeLiteral());
+        out.add(Literals.VarTypeLiteral(p));
         // <variable>
-        out.add(Variable());
+        out.add(Variable(p));
 
         // EQUALS
         p.tryNextToken(Type.EQUALS);
@@ -98,10 +123,10 @@ public class Expressions {
         Type nextType = p.l.nextType();
         // <stringliteral>
         if (nextType == Type.STR)
-            out.add(StringLiteral());
+            out.add(Literals.StringLiteral(p));
         // <binaryexpression>
         else
-            out.add(BinaryExpression());
+            out.add(BinaryExpression(p));
         
         
         return new Node(
@@ -119,18 +144,18 @@ public class Expressions {
      *                         binaryexpression
      *                       | stringliteral
      */
-    public static Node AssignExpression() throws ParseException {
+    public static Node AssignExpression(Parser p) throws ParseException {
         List<Node> out = new ArrayList<Node>();
         // variable
-        out.add(Variable());
+        out.add(Variable(p));
 
         Type nextType = p.l.nextType();
         // addsuboperator
         if (nextType.within(Type.PLUS, Type.MINUS))
-            out.add(AddSubOperator());
+            out.add(AddSubOperator(p));
         // muldivoperator
         else if (nextType.within(Type.MUL, Type.DIV))
-            out.add(MulDivOperator());
+            out.add(MulDivOperator(p));
         
         // EQUALS
         p.tryNextToken(Type.EQUALS);
@@ -138,10 +163,10 @@ public class Expressions {
         nextType = p.l.nextType();
         // stringliteral
         if (nextType == Type.STR)
-            out.add(StringLiteral());
+            out.add(Literals.StringLiteral(p));
         // binaryexpression
         else
-            out.add(BinaryExpression());
+            out.add(BinaryExpression(p));
         
         return new Node(
             "AssignExpression",
@@ -152,44 +177,22 @@ public class Expressions {
     /**
      * ifexpression := IF LP boolexpression RP LB statement... RB
      */
-    public static Node IfExpression() throws ParseException {
-        List<Node> out = new ArrayList<Node>();
-
-        p.tryNextToken(Type.IF);
-        p.tryNextToken(Type.LP);
-        out.add(BoolExpression());
-        p.tryNextToken(Type.RP);
-        p.tryNextToken(Type.LB);
-
-        // while the type isn't RB
-        Type nextType = p.l.nextType();
-        while (nextType != Type.RB) {
-            Node temp = Statement();
-            if (temp != null)
-                out.add(temp);
-            nextType = p.l.nextType();
-        }
-
-        p.tryNextToken(Type.RB);
-
-        return new Node(
-            "IfStatement",
-            out
-        );
+    public static Node IfExpression(Parser p) throws ParseException {
+        return EvalBlockStatement(p, Type.IF);
     }
 
     /**
      * boolexpression := boolterm andoroperator boolterm
      *                 | boolterm
      */
-    public static Node BoolExpression() throws ParseException {
+    public static Node BoolExpression(Parser p) throws ParseException {
         List<Node> expression = new ArrayList<Node>();
-        expression.add(BoolTerm());
+        expression.add(BoolTerm(p));
 
         Type nextType = p.l.nextType();
         if (nextType.within(Type.AND, Type.OR)) {
-            expression.add(AndOrOperator());
-            expression.add(BoolTerm());
+            expression.add(AndOrOperator(p));
+            expression.add(BoolTerm(p));
         }
 
         return new Node(
@@ -202,14 +205,14 @@ public class Expressions {
      * boolterm := boolfactor compareoperator boolfactor
      *           | boolfactor
      */
-    public static Node BoolTerm() throws ParseException {
+    public static Node BoolTerm(Parser p) throws ParseException {
         List<Node> expression = new ArrayList<Node>();
-        expression.add(BoolFactor());
+        expression.add(BoolFactor(p));
 
         Type nextType = p.l.nextType();
         if (nextType.within(Type.EQUIVALENT, Type.GREATER, Type.LESS)) {
-            expression.add(CompareOperator());
-            expression.add(BoolFactor());
+            expression.add(CompareOperator(p));
+            expression.add(BoolFactor(p));
         }
 
         return new Node(
@@ -225,28 +228,28 @@ public class Expressions {
      *             | truefalseliteral
      *             | VAR
      */
-    public static Node BoolFactor() throws ParseException {
+    public static Node BoolFactor(Parser p) throws ParseException {
         Type nextType = p.l.nextType();
         Node out;
 
         // NOT boolfactor
         if (nextType == Type.NOT) {
             p.tryNextToken(Type.NOT);
-            out = BoolFactor();
+            out = BoolFactor(p);
         // LP boolexpression RP
         } else if (nextType == Type.LP) {
             p.tryNextToken(Type.LP);
-            out = BoolExpression();
+            out = BoolExpression(p);
             p.tryNextToken(Type.RP);
         // truefalseliteral
         } else if (nextType.within(Type.TRUE, Type.FALSE))
-            out = TrueFalseLiteral();
+            out = Literals.TrueFalseLiteral(p);
         // VAR
         else if (nextType == Type.VAR)
-            out = Variable();
+            out = Variable(p);
         // binaryexpression
         else
-            out = BinaryExpression();
+            out = BinaryExpression(p);
         
         return new Node(
             "BoolFactor",
@@ -260,21 +263,21 @@ public class Expressions {
      *                             term addsuboperator binaryexpression
      *                           | term
      */
-    public static Node BinaryExpression() throws ParseException {
+    public static Node BinaryExpression(Parser p) throws ParseException {
         List<Node> expression = new ArrayList<Node>();
         Type nextType = p.l.nextType();
 
         // PLUS | MINUS
         if (nextType.within(Type.PLUS, Type.MINUS))
-            expression.add(AddSubOperator());
+            expression.add(AddSubOperator(p));
         
-        expression.add(Term());
+        expression.add(Term(p));
 
         nextType = p.l.nextType();
         // addsuboperator binaryexpression
         if (nextType.within(Type.PLUS, Type.MINUS)) {
-            expression.add(AddSubOperator());
-            expression.add(BinaryExpression());
+            expression.add(AddSubOperator(p));
+            expression.add(BinaryExpression(p));
         }
 
         return new Node(
@@ -287,16 +290,16 @@ public class Expressions {
      * term := factor muldivoperator term
      *       | factor
      */
-    public static Node Term() throws ParseException {
+    public static Node Term(Parser p) throws ParseException {
         List<Node> term = new ArrayList<Node>();
 
-        term.add(Factor());
+        term.add(Factor(p));
 
         Type nextType = p.l.nextType();
         // muldivoperator term
         if (nextType.within(Type.MUL, Type.DIV)) {
-            term.add(MulDivOperator());
-            term.add(Term());
+            term.add(MulDivOperator(p));
+            term.add(Term(p));
         }
 
         return new Node(
@@ -310,23 +313,23 @@ public class Expressions {
      *         | numberliteral
      *         | LP binaryexpression RP
      */
-    public static Node Factor() throws ParseException {
+    public static Node Factor(Parser p) throws ParseException {
         Type nextType = p.l.nextType();
         Node out;
 
         // numberliteral
         if (nextType.within(Type.INT, Type.FLOAT))
-            out = NumberLiteral();
+            out = Literals.NumberLiteral(p);
         // variable
         else if (nextType == Type.VAR)
-            out = Variable();
+            out = Variable(p);
         // LP binaryexpression RP
         else if (nextType == Type.LP) {
             p.tryNextToken(Type.LP);
-            out = BinaryExpression();
+            out = BinaryExpression(p);
             p.tryNextToken(Type.RP);
         } else
-            throw new TokenTypeException(nextType, "VAR, NumberLiteral, (LP BinaryExpression RP)", p.l.getPos());
+            throw new TokenTypeException(nextType, "Variable, NumberLiteral, (BinaryExpression)", p.l.getPos());
         
         return new Node(
             "Factor",
@@ -339,7 +342,7 @@ public class Expressions {
      *           | TRUE
      *           | FALSE
      */
-    public static ValueNode<String> Variable() throws ParseException {
+    public static ValueNode<String> Variable(Parser p) throws ParseException {
         return new ValueNode<String>(
             "Variable",
             p.tryNextToken(Type.VAR, Type.TRUE, Type.FALSE)
@@ -350,7 +353,7 @@ public class Expressions {
      * addsuboperator := PLUS
      *                 | MINUS
      */
-    public static ValueNode<Type> AddSubOperator() throws ParseException {
+    public static ValueNode<Type> AddSubOperator(Parser p) throws ParseException {
         Type nextType = p.l.nextType();
 
         p.tryNextToken(Type.PLUS, Type.MINUS);
@@ -365,7 +368,7 @@ public class Expressions {
      * muldivoperator := PLUS
      *                 | MINUS
      */
-    public static ValueNode<Type> MulDivOperator() throws ParseException {
+    public static ValueNode<Type> MulDivOperator(Parser p) throws ParseException {
         Type nextType = p.l.nextType();
 
         p.tryNextToken(Type.MUL, Type.DIV);
@@ -383,7 +386,7 @@ public class Expressions {
      *                  | GREATER
      *                      | GREATER EQUALS
      */
-    public static ValueNode<List<Type>> CompareOperator() throws ParseException {
+    public static ValueNode<List<Type>> CompareOperator(Parser p) throws ParseException {
         List<Type> out = new ArrayList<Type>();
         Type nextType = p.l.nextType();
 
@@ -406,7 +409,7 @@ public class Expressions {
      * andoroperator := AND
      *                | OR
      */
-    public static ValueNode<Type> AndOrOperator() throws ParseException {
+    public static ValueNode<Type> AndOrOperator(Parser p) throws ParseException {
         Type nextType = p.l.nextType();
 
         p.tryNextToken(Type.AND, Type.OR);
@@ -414,86 +417,6 @@ public class Expressions {
         return new ValueNode<Type>(
             "MulDivOperator",
             nextType
-        );
-    }
-
-    /**
-     * vartypeliteral := VAR_TYPES
-     */
-    public static ValueNode<Type> VarTypeLiteral() throws ParseException {
-        Type out = p.l.nextType();
-        p.tryNextToken(Type.getVarTypes());
-
-        return new ValueNode<Type>(
-            "VarTypeLiteral",
-            out
-        );
-    }
-
-    /**
-     * truefalseliteral := TRUE
-     *                   | FALSE
-     */
-    public static ValueNode<Type> TrueFalseLiteral() throws ParseException {
-        Type out = p.l.nextType();
-        p.tryNextToken(Type.TRUE, Type.FALSE);
-
-        return new ValueNode<Type>(
-            "TrueFalseLiteral",
-            out
-        );
-    }
-
-    /**
-     * stringliteral := STR
-     */
-    public static ValueNode<String> StringLiteral() throws ParseException {
-        return new ValueNode<String>(
-            "StringLiteral",
-            p.tryNextToken(Type.STR)
-        );
-    }
-
-    /**
-     * numberliteral := intliteral
-     *                | floatliteral
-     */
-    public static Node NumberLiteral() throws ParseException {
-        Type nextType = p.l.nextType();
-        Node literal;
-
-        if (nextType == Type.INT)
-            literal = IntLiteral();
-        else if (nextType == Type.FLOAT)
-            literal = FloatLiteral();
-        else if (nextType == null)
-            throw new EOFException("Operator");
-        else
-            throw new TokenTypeException(nextType, "NumberLiteral", p.l.getPos());
-        
-        return new Node(
-            "NumberLiteral",
-            literal
-        );
-    }
-
-    /**
-     * intliteral := INT
-     */
-    public static ValueNode<Integer> IntLiteral() throws ParseException {
-        return new ValueNode<Integer>(
-            "IntLiteral",
-            Integer.parseInt(p.tryNextToken(Type.INT))
-        );
-    }
-
-    /**
-     * floatliteral := FLOAT
-     */
-    public static ValueNode<Float> FloatLiteral() throws ParseException {
-        return new ValueNode<Float>(
-            "FloatLiteral",
-            Float.parseFloat(p.tryNextToken(Type.FLOAT))
         );
     }
     

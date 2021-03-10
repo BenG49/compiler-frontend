@@ -16,8 +16,7 @@ public class Parser {
     public Node parse() throws ParseException {
         l = new Lexer(s);
 
-        Expressions.setParser(this);
-        return Expressions.Program();
+        return Expressions.Program(this);
     }
 
     public int getStatementCount() {
