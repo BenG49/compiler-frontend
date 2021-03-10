@@ -80,6 +80,6 @@ public class Lexer {
     }
 
     public int[] getPos() {
-        return new int[] {line, index};
+        return new int[] {line+1, index};
     }
 }

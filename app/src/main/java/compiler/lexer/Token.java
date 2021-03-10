@@ -15,6 +15,14 @@ public class Token {
         FLOAT(  "\\G\\d+[.]\\d+"),
         // https://stackoverflow.com/questions/171480/regex-grabbing-values-between-quotation-marks
         STR( "\\G\"(.*?)\""),
+
+        EQUIVALENT( "\\G(==)"),
+        LESS(   "\\G<"),
+        GREATER("\\G>"),
+        OR(     "\\G(\\|\\|)"),
+        AND(    "\\G(\\&\\&)"),
+        NOT(    "\\G!"),
+
         PLUS(   "\\G\\+"),
         MINUS(  "\\G\\-"),
         MUL(    "\\G\\*"),
@@ -31,6 +39,8 @@ public class Token {
         STRING_ID("\\G(str)"),
         IF("\\G(if)"),
         ELSE("\\G(if)"),
+        TRUE("\\G(true)"),
+        FALSE("\\G(false)"),
 
         NEWLINE("\\G(\r\n|\r|\n)"),
 

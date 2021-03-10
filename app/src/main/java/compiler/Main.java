@@ -9,6 +9,12 @@ public class Main {
     public static void main(String[] args) {
         // testLexer();
         testParser();
+
+        int a = 0;
+        int b = 0;
+        if (a > b) {
+
+        }
     }
 
     public static void testParser() {

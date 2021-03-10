@@ -27,7 +27,7 @@ public class Parser {
     public String tryNextToken(Type type) throws ParseException {
         return tryNextToken(new Type[] {type});
     }
-    public String tryNextToken(Type[] type) throws ParseException {
+    public String tryNextToken(Type... type) throws ParseException {
         Token token = l.next();
         if (token == null)
             throw new EOFException(type+"");

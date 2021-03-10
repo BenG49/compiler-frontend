@@ -73,14 +73,14 @@ public class Expressions {
     }
 
     /**
-     * <ifexpression> := "IF" "LP" <evalexpression> "RP" "LB" (<statement>...) "RB"
+     * <ifexpression> := "IF" "LP" <boolexpression> "RP" "LB" (<statement>...) "RB"
      */
     public static Node IfStatement() throws ParseException {
         List<Node> out = new ArrayList<Node>();
 
         p.tryNextToken(Type.IF);
         p.tryNextToken(Type.LP);
-        out.add(BinaryExpression());
+        out.add(BoolExpression());
         p.tryNextToken(Type.RP);
         p.tryNextToken(Type.LB);
 
@@ -102,20 +102,82 @@ public class Expressions {
     }
 
     /**
-     * <booleanexpression> := ((<binaryexpression>
-     *                            ("==" | ">" | "<" | ">=" | "<=")
-     *                         <binaryexpression>)
-     *                        | VAR ("" | "== true" | "== false" | "==" VAR))
-     *                        (
-     *                         )
+     * <boolexpression> := <boolterm> <andoroperator> <boolterm>
+     *                   | <boolterm>
      */
-    // public static Node BooleanExpression() throws ParseException {
-    // }
+    public static Node BoolExpression() throws ParseException {
+        List<Node> expression = new ArrayList<Node>();
+        expression.add(BoolTerm());
+
+        Type nextType = p.l.nextType();
+        if (nextType == Type.AND || nextType == Type.OR) {
+            expression.add(AndOrOperator());
+            expression.add(BoolTerm());
+        }
+
+        return new Node(
+            "BoolExpression",
+            expression
+        );
+    }
 
     /**
-     * https://stackoverflow.com/questions/9934553/extended-backus-naur-form-order-of-operations
-     * <binaryexpression> := (<addsuboperator>|"") <term> (<addsuboperator> <term>)*
-     * 
+     * <boolterm> := <boolfactor> <compareoperator> <boolfactor>
+     *             | <boolfactor>
+     */
+    public static Node BoolTerm() throws ParseException {
+        List<Node> expression = new ArrayList<Node>();
+        expression.add(BoolFactor());
+
+        Type nextType = p.l.nextType();
+        if (nextType == Type.EQUIVALENT || nextType == Type.GREATER || nextType == Type.LESS) {
+            expression.add(CompareOperator());
+            expression.add(BoolFactor());
+        }
+
+        return new Node(
+            "BoolTerm",
+            expression
+        );
+    }
+
+    /**
+     * <boolfactor> := NOT <boolfactor>
+     *               | LP <boolexpression> RP
+     *               | <binaryexpression>
+     *               | <truefalseliteral>
+     *               | VAR
+     */
+    public static Node BoolFactor() throws ParseException {
+        Type nextType = p.l.nextType();
+        Node out;
+
+        // NOT <boolfactor>
+        if (nextType == Type.NOT) {
+            p.tryNextToken(Type.NOT);
+            out = BoolFactor();
+        // LP <boolexpression> RP
+        } else if (nextType == Type.LP) {
+            p.tryNextToken(Type.LP);
+            out = BoolExpression();
+            p.tryNextToken(Type.RP);
+        // <truefalseliteral>
+        } else if (nextType == Type.TRUE || nextType == Type.FALSE)
+            out = TrueFalseLiteral();
+        // VAR
+        else if (nextType == Type.VAR)
+            out = Variable();
+        // <binaryexpression>
+        else
+            out = BinaryExpression();
+        
+        return new Node(
+            "BoolFactor",
+            out
+        );
+    }
+
+    /**
      * <binaryexpression> := (<addsuboperator>|"") ((<term> <addsuboperator> <binaryexpression>)
      *                                             | <term>)
      */
@@ -195,11 +257,13 @@ public class Expressions {
 
     /**
      * <variable> := VAR
+     *             | TRUE
+     *             | FALSE
      */
     public static ValueNode<String> Variable() throws ParseException {
         return new ValueNode<String>(
             "Variable",
-            p.tryNextToken(Type.VAR)
+            p.tryNextToken(Type.VAR, Type.TRUE, Type.FALSE)
         );
     }
     
@@ -210,7 +274,7 @@ public class Expressions {
     public static ValueNode<Type> AddSubOperator() throws ParseException {
         Type nextType = p.l.nextType();
 
-        p.tryNextToken(new Type[] {Type.PLUS, Type.MINUS});
+        p.tryNextToken(Type.PLUS, Type.MINUS);
 
         return new ValueNode<Type>(
             "AddSubOperator",
@@ -225,7 +289,46 @@ public class Expressions {
     public static ValueNode<Type> MulDivOperator() throws ParseException {
         Type nextType = p.l.nextType();
 
-        p.tryNextToken(new Type[] {Type.MUL, Type.DIV});
+        p.tryNextToken(Type.MUL, Type.DIV);
+
+        return new ValueNode<Type>(
+            "MulDivOperator",
+            nextType
+        );
+    }
+
+    /**
+     * <compareoperator> := EQUIVALENT
+     *                    | (LESS | LESS EQUALS)
+     *                    | (GREATER | GREATER EQUALS)
+     */
+    public static ValueNode<List<Type>> CompareOperator() throws ParseException {
+        List<Type> out = new ArrayList<Type>();
+        Type nextType = p.l.nextType();
+
+        p.tryNextToken(Type.EQUIVALENT, Type.LESS, Type.GREATER);
+        out.add(nextType);
+
+        nextType = p.l.nextType();
+        if (nextType == Type.EQUALS) {
+            p.tryNextToken(Type.EQUALS);
+            out.add(nextType);
+        }
+
+        return new ValueNode<List<Type>>(
+            "CompareOperator",
+            out
+        );
+    }
+
+    /**
+     * <andoroperator> := AND
+     *                  | OR
+     */
+    public static ValueNode<Type> AndOrOperator() throws ParseException {
+        Type nextType = p.l.nextType();
+
+        p.tryNextToken(Type.AND, Type.OR);
 
         return new ValueNode<Type>(
             "MulDivOperator",
@@ -253,6 +356,17 @@ public class Expressions {
         return new Node(
             "Literal",
             literal
+        );
+    }
+
+    /**
+     * <truefalseliteral> := TRUE
+     *                     | FALSE
+     */
+    public static ValueNode<String> TrueFalseLiteral() throws ParseException {
+        return new ValueNode<String>(
+            "TrueFalseLiteral",
+            p.tryNextToken(Type.TRUE, Type.FALSE)
         );
     }
 
