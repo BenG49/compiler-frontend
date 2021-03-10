@@ -36,7 +36,7 @@ public class Node {
     }
 
     protected void tabs(StringBuilder sb, int depth) {
-        final String tab = "|  ";
+        final String tab = ":  ";
         for (int i = 0; i < depth; i++)
             sb.append(tab);
     }
