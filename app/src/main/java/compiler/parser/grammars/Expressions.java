@@ -7,6 +7,7 @@ import compiler.exception.*;
 import compiler.lexer.Token.Type;
 import compiler.parser.Parser;
 
+// TODO: add parentheses support
 public class Expressions {
     private static Parser p;
 
@@ -25,10 +26,7 @@ public class Expressions {
     }
 
     /**
-     * not actually how i'm implementing it, but this is cleaner
-     * 
-     * <statementlist> := <statement>
-     *                  | <statement> <statementlist>
+     * <statementlist> := <statement>...
      */
     public static Node StatementList() throws ParseException {
         List<Node> statements = new ArrayList<Node>();
@@ -75,8 +73,7 @@ public class Expressions {
     }
 
     /**
-     * how to do single statment ifs :/
-     * <ifexpression> := "IF" "LP" <evalexpression> "RP" (("LB" "RB") | "NEWLINE")
+     * <ifexpression> := "IF" "LP" <evalexpression> "RP" "LB" (<statement>...) "RB"
      */
     public static Node IfStatement() throws ParseException {
         List<Node> out = new ArrayList<Node>();
@@ -103,6 +100,17 @@ public class Expressions {
             out
         );
     }
+
+    /**
+     * <booleanexpression> := ((<binaryexpression>
+     *                            ("==" | ">" | "<" | ">=" | "<=")
+     *                         <binaryexpression>)
+     *                        | VAR ("" | "== true" | "== false" | "==" VAR))
+     *                        (
+     *                         )
+     */
+    // public static Node BooleanExpression() throws ParseException {
+    // }
 
     /**
      * https://stackoverflow.com/questions/9934553/extended-backus-naur-form-order-of-operations
