@@ -9,17 +9,11 @@
 plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     id 'application'
-
-    // StuyLib
-    id "edu.wpi.first.GradleRIO" version "2020.3.2"
 }
 
 repositories {
     // Use JCenter for resolving dependencies.
     jcenter()
-
-    // StuyLib
-    maven { url "https://jitpack.io" }
 }
 
 dependencies {
@@ -28,12 +22,6 @@ dependencies {
 
     // This dependency is used by the application.
     implementation 'com.google.guava:guava:29.0-jre'
-
-    // StuyLib
-    compile 'com.github.StuyPulse:StuyLib:v2021.0.7'
-    
-    // bglib
-    compile files('libs/lib.jar')
 }
 
 application {
