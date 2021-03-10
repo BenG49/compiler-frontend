@@ -114,7 +114,10 @@ public class Expressions {
 
     /**
      * https://stackoverflow.com/questions/9934553/extended-backus-naur-form-order-of-operations
-     * <binaryexpression> := (<addsuboperator>|"") <termexpression> (<addsuboperator> <termexpression>)*
+     * <binaryexpression> := (<addsuboperator>|"") <term> (<addsuboperator> <term>)*
+     * 
+     * <binaryexpression> := (<addsuboperator>|"") ((<term> <addsuboperator> <binaryexpression>)
+     *                                             | <term>)
      */
     public static Node BinaryExpression() throws ParseException {
         List<Node> expression = new ArrayList<Node>();
@@ -124,15 +127,13 @@ public class Expressions {
         if (nextType == Type.PLUS || nextType == Type.MINUS)
             expression.add(AddSubOperator());
         
-        expression.add(TermExpression());
+        expression.add(Term());
 
         nextType = p.l.nextType();
-        // while next type is plus or minus -> (<addsuboperator> <termexpression>)*
-        while (nextType == Type.PLUS || nextType == Type.MINUS) {
+        // <addsuboperator> <binaryexpression>
+        if (nextType == Type.PLUS || nextType == Type.MINUS) {
             expression.add(AddSubOperator());
-            expression.add(TermExpression());
-
-            nextType = p.l.nextType();
+            expression.add(BinaryExpression());
         }
 
         return new Node(
@@ -142,30 +143,31 @@ public class Expressions {
     }
 
     /**
-     * <termexpression> := <factor> (<muldivoperator> <factor>)*
+     * <term> := <factor> <muldivoperator> <term>
+     *         | <factor>
      */
-    public static Node TermExpression() throws ParseException {
+    public static Node Term() throws ParseException {
         List<Node> term = new ArrayList<Node>();
 
         term.add(Factor());
 
         Type nextType = p.l.nextType();
-        // while next type is mul or div -> (<muldivoperator> <factor>)*
-        while (nextType == Type.MUL || nextType == Type.DIV) {
+        // <muldivoperator> <term>
+        if (nextType == Type.MUL || nextType == Type.DIV) {
             term.add(MulDivOperator());
-            term.add(Factor());
-
-            nextType = p.l.nextType();
+            term.add(Term());
         }
 
         return new Node(
-            "TermExpression",
+            "Term",
             term
         );
     }
 
     /**
-     * <factor> := <variable> | <numberliteral> | <binaryexpression>
+     * <factor> := <variable>
+     *           | <numberliteral>
+     *           | LP <binaryexpression> RP
      */
     public static Node Factor() throws ParseException {
         Type nextType = p.l.nextType();
@@ -178,9 +180,12 @@ public class Expressions {
         else if (nextType == Type.VAR)
             out = Variable();
         // <binaryexpression>
-        // TODO: should probably not have this as an else and throw exception instead
-        else
+        else if (nextType == Type.LP) {
+            p.tryNextToken(Type.LP);
             out = BinaryExpression();
+            p.tryNextToken(Type.RP);
+        } else
+            throw new TokenTypeException(nextType, "VAR, NumberLiteral, (LP BinaryExpression RP)", p.l.getPos());
         
         return new Node(
             "Factor",
