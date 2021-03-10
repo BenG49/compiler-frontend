@@ -22,16 +22,19 @@ public class Token {
         EQUALS( "\\G="),
         LP(     "\\G\\("),
         RP(     "\\G\\)"),
-        SEMI(   "\\G;"),
+        LB(     "\\G\\{"),
+        RB(     "\\G\\}"),
         
         // reserved words
-        INT_KEY("\\G(int)"),
-        FLOAT_KEY("\\G(float)"),
-        STRING_KEY("\\G(str)"),
+        INT_ID("\\G(int)"),
+        FLOAT_ID("\\G(float)"),
+        STRING_ID("\\G(str)"),
         IF("\\G(if)"),
         ELSE("\\G(if)"),
 
-        NEWLINE("\\G(\r\n|\r|\n)");
+        NEWLINE("\\G(\r\n|\r|\n)"),
+
+        VAR("\\G[A-z]+[A-z\\d]*");
 
         private static final EnumSet<Type> allOf;
 

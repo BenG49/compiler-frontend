@@ -4,7 +4,7 @@ public class EOFException extends ParseException{
 
     private static final long serialVersionUID = 1L;
 
-    private String string;
+    private final String string;
     
     public EOFException(String c) {
         this.string = "Unexpected end of file, expected '"+c+"'";

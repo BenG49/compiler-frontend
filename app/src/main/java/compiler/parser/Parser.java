@@ -25,13 +25,22 @@ public class Parser {
     }
 
     public String tryNextToken(Type type) throws ParseException {
-        Token t = l.next();
-        if (t == null)
+        return tryNextToken(new Type[] {type});
+    }
+    public String tryNextToken(Type[] type) throws ParseException {
+        Token token = l.next();
+        if (token == null)
             throw new EOFException(type+"");
         
-        if (t.type != type)
-            throw new TokenTypeException(t.type, type+"", l.getPos());
+        boolean match = false;
+        for (Type t:type) {
+            if (token.type == t)
+                match = true;
+        }
+
+        if (!match)
+            throw new TokenTypeException(token.type, type, l.getPos());
         
-        return t.value;
+        return token.value;
     }
 }

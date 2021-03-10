@@ -28,17 +28,14 @@ public class Expressions {
      * not actually how i'm implementing it, but this is cleaner
      * 
      * <statementlist> := <statement>
-     *                  | <statementlist>
+     *                  | <statement> <statementlist>
      */
     public static Node StatementList() throws ParseException {
         List<Node> statements = new ArrayList<Node>();
         while (p.l.hasNext()) {
-            Type nextType = p.l.nextType();
-            // skip blank lines
-            if (nextType != Type.NEWLINE)
-                statements.add(Statement());
-            else
-                p.tryNextToken(nextType);
+            Node temp = Statement();
+            if (temp != null)
+                statements.add(temp);
         }
 
         return new Node(
@@ -48,12 +45,27 @@ public class Expressions {
     }
 
     /**
-     * <statement> := <binaryexpression>
+     * <statement> := (<binaryexpression>
      *              | <ifexpression>
-     *              | ""
+     *              | "")
+     *                "NEWLINE"
      */
     public static Node Statement() throws ParseException {
-        Node out = BinaryExpression();
+        Node out;
+        Type nextType = p.l.nextType();
+
+        // <ifexpression>
+        if (nextType == Type.IF)
+            out = IfStatement();
+        // <binaryexpression>
+        else if (nextType == Type.VAR || nextType == Type.INT || nextType == Type.FLOAT
+              || nextType == Type.PLUS || nextType == Type.MINUS)
+            out = BinaryExpression();
+        else {
+            p.tryNextToken(Type.NEWLINE);
+            return null;
+        }
+
         p.tryNextToken(Type.NEWLINE);
 
         return new Node(
@@ -63,10 +75,34 @@ public class Expressions {
     }
 
     /**
-     * <ifstatement> := "IF" "LP" <binaryexpression> "RP"
+     * how to do single statment ifs :/
+     * <ifexpression> := "IF" "LP" <evalexpression> "RP" (("LB" "RB") | "NEWLINE")
      */
-    // public static Node IfStatement() throws ParseException {
-    // }
+    public static Node IfStatement() throws ParseException {
+        List<Node> out = new ArrayList<Node>();
+
+        p.tryNextToken(Type.IF);
+        p.tryNextToken(Type.LP);
+        out.add(BinaryExpression());
+        p.tryNextToken(Type.RP);
+        p.tryNextToken(Type.LB);
+
+        // while the type isn't RB
+        Type nextType = p.l.nextType();
+        while (nextType != Type.RB) {
+            Node temp = Statement();
+            if (temp != null)
+                out.add(temp);
+            nextType = p.l.nextType();
+        }
+
+        p.tryNextToken(Type.RB);
+
+        return new Node(
+            "IfStatement",
+            out
+        );
+    }
 
     /**
      * https://stackoverflow.com/questions/9934553/extended-backus-naur-form-order-of-operations
@@ -130,13 +166,27 @@ public class Expressions {
         // <numberliteral>
         if (nextType == Type.INT || nextType == Type.FLOAT)
             out = NumberLiteral();
-        // TODO: add variables
+        // <variable>
+        else if (nextType == Type.VAR)
+            out = Variable();
+        // <binaryexpression>
+        // TODO: should probably not have this as an else and throw exception instead
         else
             out = BinaryExpression();
         
         return new Node(
             "Factor",
             out
+        );
+    }
+
+    /**
+     * <variable> := VAR
+     */
+    public static ValueNode<String> Variable() throws ParseException {
+        return new ValueNode<String>(
+            "Variable",
+            p.tryNextToken(Type.VAR)
         );
     }
     
@@ -147,14 +197,12 @@ public class Expressions {
     public static ValueNode<Type> AddSubOperator() throws ParseException {
         Type nextType = p.l.nextType();
 
-        if (nextType == Type.PLUS || nextType == Type.MINUS) {
-            p.tryNextToken(nextType);
-            return new ValueNode<Type>(
-                "AddSubOperator",
-                nextType
-            );
-        } else
-            throw new TokenTypeException(nextType, "PLUS or MINUS", p.l.getPos());
+        p.tryNextToken(new Type[] {Type.PLUS, Type.MINUS});
+
+        return new ValueNode<Type>(
+            "AddSubOperator",
+            nextType
+        );
     }
 
     /**
@@ -164,14 +212,12 @@ public class Expressions {
     public static ValueNode<Type> MulDivOperator() throws ParseException {
         Type nextType = p.l.nextType();
 
-        if (nextType == Type.MUL || nextType == Type.DIV) {
-            p.tryNextToken(nextType);
-            return new ValueNode<Type>(
-                "MulDivOperator",
-                nextType
-            );
-        } else
-            throw new TokenTypeException(nextType, "MUL or DIV", p.l.getPos());
+        p.tryNextToken(new Type[] {Type.MUL, Type.DIV});
+
+        return new ValueNode<Type>(
+            "MulDivOperator",
+            nextType
+        );
     }
 
     /**

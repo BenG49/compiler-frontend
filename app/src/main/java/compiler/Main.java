@@ -14,6 +14,7 @@ public class Main {
     public static void testParser() {
         Parser p = new Parser(Reader.readFile(PATH));
         try {
+            System.out.println("Abstract Syntax Tree:");
             System.out.println(p.parse());
         } catch (ParseException e) {
             System.out.println(e);
