@@ -152,10 +152,10 @@ public class Expressions {
         Type nextType = p.l.nextType();
         // addsuboperator
         if (nextType.within(Type.PLUS, Type.MINUS))
-            out.add(AddSubOperator(p));
+            out.add(Operators.AddSubOperator(p));
         // muldivoperator
         else if (nextType.within(Type.MUL, Type.DIV))
-            out.add(MulDivOperator(p));
+            out.add(Operators.MulDivOperator(p));
         
         // EQUALS
         p.tryNextToken(Type.EQUALS);
@@ -191,7 +191,7 @@ public class Expressions {
 
         Type nextType = p.l.nextType();
         if (nextType.within(Type.AND, Type.OR)) {
-            expression.add(AndOrOperator(p));
+            expression.add(Operators.AndOrOperator(p));
             expression.add(BoolTerm(p));
         }
 
@@ -211,7 +211,7 @@ public class Expressions {
 
         Type nextType = p.l.nextType();
         if (nextType.within(Type.EQUIVALENT, Type.GREATER, Type.LESS)) {
-            expression.add(CompareOperator(p));
+            expression.add(Operators.CompareOperator(p));
             expression.add(BoolFactor(p));
         }
 
@@ -269,14 +269,14 @@ public class Expressions {
 
         // PLUS | MINUS
         if (nextType.within(Type.PLUS, Type.MINUS))
-            expression.add(AddSubOperator(p));
+            expression.add(Operators.AddSubOperator(p));
         
         expression.add(Term(p));
 
         nextType = p.l.nextType();
         // addsuboperator binaryexpression
         if (nextType.within(Type.PLUS, Type.MINUS)) {
-            expression.add(AddSubOperator(p));
+            expression.add(Operators.AddSubOperator(p));
             expression.add(BinaryExpression(p));
         }
 
@@ -298,7 +298,7 @@ public class Expressions {
         Type nextType = p.l.nextType();
         // muldivoperator term
         if (nextType.within(Type.MUL, Type.DIV)) {
-            term.add(MulDivOperator(p));
+            term.add(Operators.MulDivOperator(p));
             term.add(Term(p));
         }
 
@@ -346,77 +346,6 @@ public class Expressions {
         return new ValueNode<String>(
             "Variable",
             p.tryNextToken(Type.VAR, Type.TRUE, Type.FALSE)
-        );
-    }
-    
-    /**
-     * addsuboperator := PLUS
-     *                 | MINUS
-     */
-    public static ValueNode<Type> AddSubOperator(Parser p) throws ParseException {
-        Type nextType = p.l.nextType();
-
-        p.tryNextToken(Type.PLUS, Type.MINUS);
-
-        return new ValueNode<Type>(
-            "AddSubOperator",
-            nextType
-        );
-    }
-
-    /**
-     * muldivoperator := PLUS
-     *                 | MINUS
-     */
-    public static ValueNode<Type> MulDivOperator(Parser p) throws ParseException {
-        Type nextType = p.l.nextType();
-
-        p.tryNextToken(Type.MUL, Type.DIV);
-
-        return new ValueNode<Type>(
-            "MulDivOperator",
-            nextType
-        );
-    }
-
-    /**
-     * compareoperator := EQUIVALENT
-     *                  | LESS
-     *                      | LESS EQUALS
-     *                  | GREATER
-     *                      | GREATER EQUALS
-     */
-    public static ValueNode<List<Type>> CompareOperator(Parser p) throws ParseException {
-        List<Type> out = new ArrayList<Type>();
-        Type nextType = p.l.nextType();
-
-        p.tryNextToken(Type.EQUIVALENT, Type.LESS, Type.GREATER);
-        out.add(nextType);
-
-        nextType = p.l.nextType();
-        if (nextType == Type.EQUALS) {
-            p.tryNextToken(Type.EQUALS);
-            out.add(nextType);
-        }
-
-        return new ValueNode<List<Type>>(
-            "CompareOperator",
-            out
-        );
-    }
-
-    /**
-     * andoroperator := AND
-     *                | OR
-     */
-    public static ValueNode<Type> AndOrOperator(Parser p) throws ParseException {
-        Type nextType = p.l.nextType();
-
-        p.tryNextToken(Type.AND, Type.OR);
-
-        return new ValueNode<Type>(
-            "MulDivOperator",
-            nextType
         );
     }
     
