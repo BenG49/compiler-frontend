@@ -3,7 +3,7 @@ package compiler.lexer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import compiler.exception.ParseException;
+import compiler.exception.parse.ParseException;
 import compiler.syntax.Type;
 
 public class Lexer {

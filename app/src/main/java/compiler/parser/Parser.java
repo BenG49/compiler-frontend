@@ -1,6 +1,6 @@
 package compiler.parser;
 
-import compiler.exception.*;
+import compiler.exception.parse.*;
 import compiler.lexer.*;
 import compiler.syntax.Type;
 import compiler.parser.grammars.ast.AST;

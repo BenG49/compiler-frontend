@@ -3,7 +3,7 @@ package compiler.parser.grammars.expressions;
 import java.util.ArrayList;
 import java.util.List;
 
-import compiler.exception.*;
+import compiler.exception.parse.*;
 import compiler.syntax.Type;
 import compiler.parser.Parser;
 import compiler.parser.grammars.ast.*;
@@ -31,7 +31,7 @@ public class Expressions {
         }
 
         return new ASTNode<String>(
-            "StatementList", "-",
+            "StatementList", "",
             statements
         );
     }
@@ -43,7 +43,7 @@ public class Expressions {
      *                | ""
      *              NEWLINE
      */
-    public static ASTNode<String> Statement(Parser p) throws ParseException {
+    public static AST Statement(Parser p) throws ParseException {
         AST out;
         Type nextType = p.l.nextType();
 
@@ -63,39 +63,27 @@ public class Expressions {
 
         p.eat(Type.NEWLINE);
 
-        return new ASTNode<String>(
-            "Statement", "",
-            out
-        );
+        return out;
     }
 
     /**
-     * TODO: add else statement
-     * evalblockstatement := BLOCK_TYPE LP boolexpression RP LB statement... RB
+     * blockstatementbody := statement... RB
      */
-    public static ASTNode<Type> EvalBlockStatement(Parser p, Type blockType) throws ParseException {
-        List<AST> out = new ArrayList<AST>();
-
-        p.eat(blockType);
-        p.eat(Type.LP);
-        out.add(BoolExpression(p));
-        p.eat(Type.RP);
-        p.eat(Type.LB);
-
-        // while the type isn't RB
+    public static ASTNode<String> BlockStatementBody(Parser p) throws ParseException {
+        List<AST> statements = new ArrayList<AST>();
         Type nextType = p.l.nextType();
         while (nextType != Type.RB) {
             AST temp = Statement(p);
+
             if (temp != null)
-                out.add(temp);
+                statements.add(temp);
+
             nextType = p.l.nextType();
         }
 
-        p.eat(Type.RB);
-
-        return new ASTNode<Type>(
-            "EvalBlockStatement", blockType,
-            out
+        return new ASTNode<String>(
+            "BlockStatementBody", "",
+            statements
         );
     }
 
@@ -171,10 +159,42 @@ public class Expressions {
     }
 
     /**
-     * ifexpression := IF LP boolexpression RP LB statement... RB
+     * ifexpression := IF LP boolexpression RP LB blockstatementbody RB
+     *                     ""
+     *                   | ELSE LB blockstatementlist RB
+     *                   | ELSE evalblockstatement<IF>
      */
     public static ASTNode<Type> IfExpression(Parser p) throws ParseException {
-        return EvalBlockStatement(p, Type.IF);
+        final String name = "IfExpression";
+        List<AST> out = new ArrayList<AST>();
+
+        p.eat(Type.IF);
+        p.eat(Type.LP);
+        out.add(BoolExpression(p));
+        p.eat(Type.RP);
+
+        p.eat(Type.LB);
+        out.add(BlockStatementBody(p));
+        p.eat(Type.RB);
+        
+        Type nextType = p.l.nextType();
+        if (nextType == Type.ELSE) {
+            p.eat(nextType);
+
+            nextType = p.l.nextType();
+            if (nextType == Type.IF)
+                out.add(IfExpression(p));
+            else {
+                p.eat(Type.LB);
+                out.add(BlockStatementBody(p));
+                p.eat(Type.RB);
+            }
+        }
+        
+        return new ASTNode<Type>(
+            name, Type.IF,
+            out
+        );
     }
 
     /**

@@ -1,4 +1,4 @@
-package compiler.exception;
+package compiler.exception.parse;
 
 public class EOFException extends ParseException{
 

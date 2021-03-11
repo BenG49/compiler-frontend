@@ -1,6 +1,6 @@
 package compiler.parser.grammars.expressions;
 
-import compiler.exception.ParseException;
+import compiler.exception.parse.ParseException;
 import compiler.syntax.Type;
 import compiler.parser.Parser;
 import compiler.parser.grammars.ast.ASTValue;

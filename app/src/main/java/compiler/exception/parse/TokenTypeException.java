@@ -1,4 +1,4 @@
-package compiler.exception;
+package compiler.exception.parse;
 
 import compiler.syntax.Type;
 

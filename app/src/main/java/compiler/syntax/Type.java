@@ -13,13 +13,15 @@ public enum Type {
     INT(    "\\G\\d+"),
     FLOAT(  "\\G\\d+[.]\\d+"),
     // https://stackoverflow.com/questions/171480/regex-grabbing-values-between-quotation-marks
-    STR( "\\G\"(.*?)\""),
+    STR(    "\\G\"(.*?)\""),
 
     EQUIVALENT( "\\G(==)"),
-    LESS_EQUAL(     "\\G(<=)"),
+    LESS_EQUAL( "\\G(<=)"),
     GREATER_EQUAL(  "\\G(>=)"),
     LESS(   "\\G<"),
     GREATER("\\G>"),
+    // TODO: add equals set
+    // if (a =| 1, 3, 5) -> if a is equal to 1, 3, or 5
     OR(     "\\G(\\|\\|)"),
     AND(    "\\G(\\&\\&)"),
     NOT(    "\\G!"),
@@ -35,13 +37,13 @@ public enum Type {
     RB(     "\\G\\}"),
     
     // reserved words
-    INT_ID("\\G(int)"),
+    INT_ID( "\\G(int)"),
     FLOAT_ID("\\G(float)"),
-    STR_ID("\\G(str)"),
-    IF("\\G(if)"),
-    ELSE("\\G(if)"),
-    TRUE("\\G(true)"),
-    FALSE("\\G(false)"),
+    STR_ID( "\\G(str)"),
+    IF(     "\\G(if)"),
+    ELSE(   "\\G(else)"),
+    TRUE(   "\\G(true)"),
+    FALSE(  "\\G(false)"),
 
     NEWLINE("\\G(\r\n|\r|\n)"),
 

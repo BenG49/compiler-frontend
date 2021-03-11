@@ -1,6 +1,6 @@
 package compiler;
 
-import compiler.exception.ParseException;
+import compiler.exception.parse.ParseException;
 import compiler.lexer.Lexer;
 import compiler.parser.Parser;
 
