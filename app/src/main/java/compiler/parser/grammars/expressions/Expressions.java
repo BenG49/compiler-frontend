@@ -15,9 +15,7 @@ public class Expressions {
     public static ASTNode<String> Program(Parser p) throws ParseException {
         return new ASTNode<String>(
             "Program", "",
-            // StatementList(p)
-            BoolExpression(p)
-            // BinaryExpression(p)
+            StatementList(p)
         );
     }
 
@@ -39,8 +37,7 @@ public class Expressions {
     }
 
     /**
-     * statement :=     binaryexpression
-     *                | ifexpression
+     * statement :=     ifexpression
      *                | declareexpression
      *                | assignexpression
      *                | ""
@@ -53,9 +50,6 @@ public class Expressions {
         // ifexpression
         if (nextType == Type.IF)
             out = IfExpression(p);
-        // binaryexpression
-        else if (nextType.within(Type.INT, Type.FLOAT, Type.PLUS, Type.MINUS))
-            out = BinaryExpression(p);
         // declareexpression
         else if (nextType.within(Type.getVarTypes()))
             out = DeclareExpression(p);
@@ -239,21 +233,26 @@ public class Expressions {
                 name, nextType,
                 BoolFactor(p)
             );
+        }
+
         // LP boolexpression RP
-        } else if (nextType == Type.LP) {
+        if (nextType == Type.LP) {
             p.eat(Type.LP);
             AST temp = BoolExpression(p);
             p.eat(Type.RP);
             return temp;
+        }
+
         // truefalseliteral
-        } else if (nextType.within(Type.TRUE, Type.FALSE))
+        if (nextType.within(Type.TRUE, Type.FALSE))
             return Literals.TrueFalseLiteral(p);
+
         // VAR
-        else if (nextType == Type.VAR)
+        if (nextType == Type.VAR)
             return Variable(p);
+
         // binaryexpression
-        else
-            return BinaryExpression(p);
+        return BinaryExpression(p);
     }
 
     /**
@@ -313,6 +312,8 @@ public class Expressions {
         if (nextType.within(Type.MINUS, Type.PLUS)) {
             preceedingSign = nextType;
             p.eat(nextType);
+            
+            nextType = p.l.nextType();
         }
 
         // numberliteral
