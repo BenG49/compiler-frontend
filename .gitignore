@@ -27,3 +27,7 @@ hs_err_pid*
 
 # Ignore Gradle build output directory
 build
+
+# Etc
+app/.classpath
+.settings/org.eclipse.buildship.core.prefs
