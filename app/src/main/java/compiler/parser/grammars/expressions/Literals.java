@@ -11,7 +11,7 @@ public class Literals {
      */
     public static ASTValue<Type> VarTypeLiteral(Parser p) throws ParseException {
         Type out = p.l.nextType();
-        p.tryNextToken(Type.getVarTypes());
+        p.eat(Type.getVarTypes());
 
         return new ASTValue<Type>(
             "VarTypeLiteral",
@@ -25,7 +25,7 @@ public class Literals {
      */
     public static ASTValue<Type> TrueFalseLiteral(Parser p) throws ParseException {
         Type out = p.l.nextType();
-        p.tryNextToken(Type.TRUE, Type.FALSE);
+        p.eat(Type.TRUE, Type.FALSE);
 
         return new ASTValue<Type>(
             "TrueFalseLiteral",

@@ -40,6 +40,7 @@ public class Expressions {
      * statement :=     ifexpression
      *                | declareexpression
      *                | assignexpression
+     *                | whileexpression
      *                | ""
      *              NEWLINE
      */
@@ -56,6 +57,8 @@ public class Expressions {
         // assignexpression
         else if (nextType == Type.VAR)
             out = AssignExpression(p);
+        else if (nextType == Type.WHILE)
+            out = WhileExpression(p);
         else {
             p.eat(Type.NEWLINE);
             return null;
@@ -86,6 +89,32 @@ public class Expressions {
             statements
         );
     }
+
+    /**
+     * whileexpression := WHILE LP boolexpression RP LB blockstatementbody RB
+     */
+    public static ASTNode<Type> WhileExpression(Parser p) throws ParseException {
+        List<AST> out = new ArrayList<AST>();
+
+        p.eat(Type.WHILE);
+        p.eat(Type.LPAREN);
+        out.add(BoolExpression(p));
+        p.eat(Type.RPAREN);
+        p.eat(Type.LB);
+        out.add(BlockStatementBody(p));
+        p.eat(Type.RB);
+
+        return new ASTNode<Type>(
+            "WhileExpression", Type.WHILE,
+            out
+        );
+    }
+
+    /**
+     * forexpression := FOR LP boolexpression RP LB blockstatementbody RB
+     * for (int i = 0, i > var, i++)
+     * for (int i in iterable)
+     */
 
     /**
      * declareexpression := vartypeliteral variable
@@ -169,9 +198,9 @@ public class Expressions {
         List<AST> out = new ArrayList<AST>();
 
         p.eat(Type.IF);
-        p.eat(Type.LP);
+        p.eat(Type.LPAREN);
         out.add(BoolExpression(p));
-        p.eat(Type.RP);
+        p.eat(Type.RPAREN);
 
         p.eat(Type.LB);
         out.add(BlockStatementBody(p));
@@ -256,10 +285,10 @@ public class Expressions {
         }
 
         // LP boolexpression RP
-        if (nextType == Type.LP) {
-            p.eat(Type.LP);
+        if (nextType == Type.LPAREN) {
+            p.eat(Type.LPAREN);
             AST temp = BoolExpression(p);
-            p.eat(Type.RP);
+            p.eat(Type.RPAREN);
             return temp;
         }
 
@@ -358,10 +387,10 @@ public class Expressions {
                 );
 
         // LP binaryexpression RP
-        if (nextType == Type.LP) {
-            p.eat(Type.LP);
+        if (nextType == Type.LPAREN) {
+            p.eat(Type.LPAREN);
             AST temp = BinaryExpression(p);
-            p.eat(Type.RP);
+            p.eat(Type.RPAREN);
 
             if (preceedingSign == null)
                 return temp;
@@ -383,7 +412,7 @@ public class Expressions {
     public static ASTValue<String> Variable(Parser p) throws ParseException {
         return new ASTValue<String>(
             "Variable",
-            p.tryNextToken(Type.VAR, Type.TRUE, Type.FALSE)
+            p.eat(Type.VAR, Type.TRUE, Type.FALSE)
         );
     }
     

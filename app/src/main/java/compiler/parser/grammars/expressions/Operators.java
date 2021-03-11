@@ -13,7 +13,7 @@ public class Operators {
     public static ASTValue<Type> AddSubOperator(Parser p) throws ParseException {
         Type nextType = p.l.nextType();
 
-        p.tryNextToken(Type.PLUS, Type.MINUS);
+        p.eat(Type.PLUS, Type.MINUS);
 
         return new ASTValue<Type>(
             "AddSubOperator",
@@ -28,7 +28,7 @@ public class Operators {
     public static ASTValue<Type> MulDivOperator(Parser p) throws ParseException {
         Type nextType = p.l.nextType();
 
-        p.tryNextToken(Type.MUL, Type.DIV);
+        p.eat(Type.MUL, Type.DIV);
 
         return new ASTValue<Type>(
             "MulDivOperator",

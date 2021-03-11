@@ -21,9 +21,9 @@ public class Parser {
     }
 
     public String eat(Type type) throws ParseException {
-        return tryNextToken(new Type[] {type});
+        return eat(new Type[] {type});
     }
-    public String tryNextToken(Type... type) throws ParseException {
+    public String eat(Type... type) throws ParseException {
         Token token = l.next();
         if (token == null)
             throw new EOFException(type+"");

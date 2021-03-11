@@ -31,8 +31,10 @@ public enum Type {
     MUL(    "\\G\\*"),
     DIV(    "\\G/"),
     EQUAL(  "\\G="),
-    LP(     "\\G\\("),
-    RP(     "\\G\\)"),
+    // TODO: add +=,  -=, ++, --, *=, **, etc
+
+    LPAREN( "\\G\\("),
+    RPAREN( "\\G\\)"),
     LB(     "\\G\\{"),
     RB(     "\\G\\}"),
     
@@ -44,6 +46,8 @@ public enum Type {
     ELSE(   "\\G(else)"),
     TRUE(   "\\G(true)"),
     FALSE(  "\\G(false)"),
+    WHILE(  "\\G(while)"),
+    FOR(    "\\G(for)"),
 
     NEWLINE("\\G(\r\n|\r|\n)"),
 
