@@ -37,11 +37,11 @@ public class Expressions {
     }
 
     /**
-     * statement :=     ifexpression
-     *                | declareexpression
-     *                | assignexpression
-     *                | whileexpression
-     *                | forexpression
+     * statement :=     ifstatement
+     *                | declarestatement
+     *                | assignstatement
+     *                | whilestatement
+     *                | forstatement
      *                | functioncall
      *                | ""
      *              NEWLINE
@@ -50,19 +50,19 @@ public class Expressions {
         AST out;
         Type nextType = p.l.nextType();
 
-        // ifexpression
+        // ifstatement
         if (nextType == Type.IF)
-            out = IfExpression(p);
-        // declareexpression
+            out = IfStatement(p);
+        // declarestatement
         else if (nextType.within(Type.getVarTypes()))
-            out = DeclareExpression(p);
-        // assignexpression
+            out = DeclareStatement(p);
+        // assignstatement
         else if (nextType == Type.VAR)
-            out = AssignExpression(p);
+            out = AssignStatement(p);
         else if (nextType == Type.WHILE)
-            out = WhileExpression(p);
+            out = WhileStatement(p);
         else if (nextType == Type.FOR)
-            out = ForExpression(p);
+            out = ForStatement(p);
         else if (nextType == Type.FUNC)
             out = FunctionCall(p);
         else {
@@ -133,9 +133,9 @@ public class Expressions {
     }
 
     /**
-     * whileexpression := WHILE LPAREN boolexpression RPAREN LB blockstatementbody RB
+     * whilestatement := WHILE LPAREN boolexpression RPAREN LB blockstatementbody RB
      */
-    public static ASTNode<Type> WhileExpression(Parser p) throws ParseException {
+    public static ASTNode<Type> WhileStatement(Parser p) throws ParseException {
         List<AST> out = new ArrayList<AST>();
 
         p.eat(Type.WHILE);
@@ -153,19 +153,19 @@ public class Expressions {
     }
 
     /**
-     * forexpression := FOR LPAREN
-     *                              declareexprression
-     *                            | ""
-     *                          COMMA
-     *                              boolexpression
-     *                            | ""
-     *                          COMMA
-     *                              assignexpression
-     *                            | ""
-     *                    | vartypeliteral variable IN iterable
-     *                  RPAREN LB blockstatementbody RB
+     * forstatement := FOR LPAREN
+     *                             declareexprression
+     *                           | ""
+     *                         COMMA
+     *                             boolexpression
+     *                           | ""
+     *                         COMMA
+     *                             assignstatement
+     *                           | ""
+     *                   | vartypeliteral variable IN iterable
+     *                 RPAREN LB blockstatementbody RB
      */
-    public static ASTNode<Type> ForExpression(Parser p) throws ParseException {
+    public static ASTNode<Type> ForStatement(Parser p) throws ParseException {
         List<AST> out = new ArrayList<AST>();
 
         p.eat(Type.FOR);
@@ -174,7 +174,7 @@ public class Expressions {
         // TODO: add case for iterable
         Type nextType = p.l.nextType();
         if (nextType != Type.COMMA)
-            out.add(DeclareExpression(p));
+            out.add(DeclareStatement(p));
 
         p.eat(Type.COMMA);
         nextType = p.l.nextType();
@@ -184,7 +184,7 @@ public class Expressions {
         p.eat(Type.COMMA);
         nextType = p.l.nextType();
         if (nextType != Type.RPAREN)
-            out.add(AssignExpression(p));
+            out.add(AssignStatement(p));
 
         p.eat(Type.RPAREN);
         p.eat(Type.LB);
@@ -192,33 +192,33 @@ public class Expressions {
         p.eat(Type.RB);
 
         return new ASTNode<Type>(
-            "ForExpression", Type.FOR,
+            "ForStatement", Type.FOR,
             out
         );
     }
 
     /**
-     * declareexpression := vartypeliteral variable
-     *                          ""
-     *                        | EQUALS 
-     *                              binaryexpression
-     *                            | stringliteral
+     * declarestatement := vartypeliteral variable
+     *                         ""
+     *                       | EQUALS 
+     *                             binaryexpression
+     *                           | stringliteral
      */
-    public static ASTNode<Type> DeclareExpression(Parser p) throws ParseException {
+    public static ASTNode<Type> DeclareStatement(Parser p) throws ParseException {
         List<AST> out = new ArrayList<AST>();
-        // <vartypeliteral>
+        // vartypeliteral
         out.add(Literals.VarTypeLiteral(p));
-        // <variable>
+        // variable
         out.add(Variable(p));
 
         // EQUALS
         p.eat(Type.EQUAL);
         
         Type nextType = p.l.nextType();
-        // <stringliteral>
+        // stringliteral
         if (nextType == Type.STR)
             out.add(Literals.StringLiteral(p));
-        // <binaryexpression>
+        // binaryexpression
         else
             out.add(BinaryExpression(p));
         
@@ -230,15 +230,15 @@ public class Expressions {
     }
 
     /**
-     * assignexpression := variable
-     *                         EQUALS 
-     *                             binaryexpression
-     *                           | stringliteral
-     *                    | assignoperator
-     *                         ""
-     *                       | binaryexpression
+     * assignstatement := variable
+     *                        EQUALS 
+     *                            binaryexpression
+     *                          | stringliteral
+     *                   | assignoperator
+     *                        ""
+     *                      | binaryexpression
      */
-    public static ASTNode<Type> AssignExpression(Parser p) throws ParseException {
+    public static ASTNode<Type> AssignStatement(Parser p) throws ParseException {
         List<AST> out = new ArrayList<AST>();
         // variable
         out.add(Variable(p));
@@ -276,19 +276,19 @@ public class Expressions {
         }
         
         return new ASTNode<Type>(
-            "AssignExpression", Type.EQUAL,
+            "AssignStatement", Type.EQUAL,
             out
         );
     }
 
     /**
-     * ifexpression := IF LPAREN boolexpression RPAREN LB blockstatementbody RB
-     *                     ""
-     *                   | ELSE LB blockstatementlist RB
-     *                   | ELSE ifexpression
+     * ifstatement := IF LPAREN boolexpression RPAREN LB blockstatementbody RB
+     *                    ""
+     *                  | ELSE LB blockstatementlist RB
+     *                  | ELSE ifstatement
      */
-    public static ASTNode<Type> IfExpression(Parser p) throws ParseException {
-        final String name = "IfExpression";
+    public static ASTNode<Type> IfStatement(Parser p) throws ParseException {
+        final String name = "IfStatement";
         List<AST> out = new ArrayList<AST>();
 
         p.eat(Type.IF);
@@ -306,9 +306,9 @@ public class Expressions {
             p.eat(nextType);
 
             nextType = p.l.nextType();
-            // ifexpression
+            // ifstatement
             if (nextType == Type.IF)
-                out.add(IfExpression(p));
+                out.add(IfStatement(p));
             // LB blockstatementlist RB
             else {
                 p.eat(Type.LB);
