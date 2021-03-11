@@ -1,6 +1,6 @@
 package compiler.exception;
 
-import compiler.lexer.Token.Type;
+import compiler.syntax.Type;
 
 public class TokenTypeException extends ParseException {
 
@@ -9,20 +9,8 @@ public class TokenTypeException extends ParseException {
     private final String string;
 
     public TokenTypeException(Type given, Object expected, int[] pos) {
-        // StringBuilder sb = new StringBuilder();
-        // sb.append("Incorrect token type ");
-        // sb.append(given);
-        // sb.append(" given, expected ");
-        // sb.append(expected);
-        // sb.append(" at line ");
-        // sb.append(pos[0]);
-        // sb.append(", index ");
-        // sb.append(pos[1]);
-
-        // this.string = sb.toString();
         this(given, new Object[] {expected}, pos);
     }
-
     public TokenTypeException(Type given, Object[] expected, int[] pos) {
         StringBuilder sb = new StringBuilder();
         sb.append("Incorrect token type ");

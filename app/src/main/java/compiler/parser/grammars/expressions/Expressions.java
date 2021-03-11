@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import compiler.exception.*;
-import compiler.lexer.Token.Type;
+import compiler.syntax.Type;
 import compiler.parser.Parser;
 import compiler.parser.grammars.ast.*;
 
@@ -15,7 +15,9 @@ public class Expressions {
     public static ASTNode<String> Program(Parser p) throws ParseException {
         return new ASTNode<String>(
             "Program", "",
-            StatementList(p)
+            // StatementList(p)
+            BoolExpression(p)
+            // BinaryExpression(p)
         );
     }
 
@@ -182,24 +184,26 @@ public class Expressions {
     }
 
     /**
-     * boolexpression := boolterm andoroperator boolterm
+     * boolexpression := boolterm andoroperator boolexpression
      *                 | boolterm
      */
     public static AST BoolExpression(Parser p) throws ParseException {
         AST temp = BoolTerm(p);
 
         Type nextType = p.l.nextType();
-        if (nextType.within(Type.AND, Type.OR))
+        if (nextType.within(Type.AND, Type.OR)) {
+            p.eat(nextType);
             return new ASTNode<Type>(
                 "BoolExpression", nextType,
-                temp, BoolTerm(p)
+                temp, BoolExpression(p)
             );
+        }
 
         return temp;
     }
 
     /**
-     * boolterm := boolfactor compareoperator boolfactor
+     * boolterm := boolfactor compareoperator boolterm
      *           | boolfactor
      */
     public static AST BoolTerm(Parser p) throws ParseException {
@@ -210,7 +214,7 @@ public class Expressions {
             p.eat(nextType);
             return new ASTNode<Type>(
                 "BoolTerm", nextType,
-                temp, BoolFactor(p)
+                temp, BoolTerm(p)
             );
         }
 
@@ -240,8 +244,7 @@ public class Expressions {
             p.eat(Type.LP);
             AST temp = BoolExpression(p);
             p.eat(Type.RP);
-            System.out.println("see where this would show up");
-                return Literals.TrueFalseLiteral(p);
+            return temp;
         // truefalseliteral
         } else if (nextType.within(Type.TRUE, Type.FALSE))
             return Literals.TrueFalseLiteral(p);

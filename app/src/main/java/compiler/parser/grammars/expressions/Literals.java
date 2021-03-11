@@ -3,7 +3,7 @@ package compiler.parser.grammars.expressions;
 import compiler.exception.*;
 import compiler.parser.Parser;
 import compiler.parser.grammars.ast.*;
-import compiler.lexer.Token.Type;
+import compiler.syntax.Type;
 
 public class Literals {
     /**
@@ -47,7 +47,7 @@ public class Literals {
      * numberliteral := intliteral
      *                | floatliteral
      */
-    public static ASTValue NumberLiteral(Parser p) throws ParseException {
+    public static AST NumberLiteral(Parser p) throws ParseException {
         Type nextType = p.l.nextType();
 
         if (nextType == Type.INT)

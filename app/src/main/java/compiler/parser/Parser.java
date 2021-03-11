@@ -2,7 +2,7 @@ package compiler.parser;
 
 import compiler.exception.*;
 import compiler.lexer.*;
-import compiler.lexer.Token.Type;
+import compiler.syntax.Type;
 import compiler.parser.grammars.ast.AST;
 import compiler.parser.grammars.expressions.Expressions;
 

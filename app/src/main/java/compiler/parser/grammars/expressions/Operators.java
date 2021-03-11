@@ -1,10 +1,7 @@
 package compiler.parser.grammars.expressions;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import compiler.exception.ParseException;
-import compiler.lexer.Token.Type;
+import compiler.syntax.Type;
 import compiler.parser.Parser;
 import compiler.parser.grammars.ast.ASTValue;
 
