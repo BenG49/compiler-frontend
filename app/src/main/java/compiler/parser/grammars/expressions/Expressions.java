@@ -41,6 +41,8 @@ public class Expressions {
      *                | declareexpression
      *                | assignexpression
      *                | whileexpression
+     *                | forexpression
+     *                | functioncall
      *                | ""
      *              NEWLINE
      */
@@ -59,6 +61,10 @@ public class Expressions {
             out = AssignExpression(p);
         else if (nextType == Type.WHILE)
             out = WhileExpression(p);
+        else if (nextType == Type.FOR)
+            out = ForExpression(p);
+        else if (nextType == Type.FUNC)
+            out = FunctionCall(p);
         else {
             p.eat(Type.NEWLINE);
             return null;
@@ -67,6 +73,42 @@ public class Expressions {
         p.eat(Type.NEWLINE);
 
         return out;
+    }
+    
+    /**
+     * functioncall := VAR LPAREN 
+     *                     binaryexpression
+     *                   | stringliteral
+     *                   | VAR
+     *                 COMMA
+     *                 ...
+     *                 RPAREN
+     */
+    public static ASTNode<String> FunctionCall(Parser p) throws ParseException {
+        List<AST> out = new ArrayList<AST>();
+        String func = p.eat(Type.FUNC);
+        Type nextType = p.l.nextType();
+
+        while (nextType != Type.RPAREN) {
+            if (nextType == Type.VAR)
+                out.add(Variable(p));
+            else if (nextType == Type.STR)
+                out.add(Literals.StringLiteral(p));
+            else
+                out.add(BinaryExpression(p));
+            
+            nextType = p.l.nextType();
+            if (nextType == Type.COMMA)
+                p.eat(Type.COMMA);
+
+            nextType = p.l.nextType();
+        }
+        p.eat(Type.RPAREN);
+
+        return new ASTNode<String>(
+            "FunctionCall", func.substring(0, func.length()-1),
+            out
+        );
     }
 
     /**
@@ -91,7 +133,7 @@ public class Expressions {
     }
 
     /**
-     * whileexpression := WHILE LP boolexpression RP LB blockstatementbody RB
+     * whileexpression := WHILE LPAREN boolexpression RPAREN LB blockstatementbody RB
      */
     public static ASTNode<Type> WhileExpression(Parser p) throws ParseException {
         List<AST> out = new ArrayList<AST>();
@@ -111,10 +153,49 @@ public class Expressions {
     }
 
     /**
-     * forexpression := FOR LP boolexpression RP LB blockstatementbody RB
-     * for (int i = 0, i > var, i++)
-     * for (int i in iterable)
+     * forexpression := FOR LPAREN
+     *                              declareexprression
+     *                            | ""
+     *                          COMMA
+     *                              boolexpression
+     *                            | ""
+     *                          COMMA
+     *                              assignexpression
+     *                            | ""
+     *                    | vartypeliteral variable IN iterable
+     *                  RPAREN LB blockstatementbody RB
      */
+    public static ASTNode<Type> ForExpression(Parser p) throws ParseException {
+        List<AST> out = new ArrayList<AST>();
+
+        p.eat(Type.FOR);
+        p.eat(Type.LPAREN);
+        
+        // TODO: add case for iterable
+        Type nextType = p.l.nextType();
+        if (nextType != Type.COMMA)
+            out.add(DeclareExpression(p));
+
+        p.eat(Type.COMMA);
+        nextType = p.l.nextType();
+        if (nextType != Type.COMMA)
+            out.add(BoolExpression(p));
+
+        p.eat(Type.COMMA);
+        nextType = p.l.nextType();
+        if (nextType != Type.RPAREN)
+            out.add(AssignExpression(p));
+
+        p.eat(Type.RPAREN);
+        p.eat(Type.LB);
+        out.add(BlockStatementBody(p));
+        p.eat(Type.RB);
+
+        return new ASTNode<Type>(
+            "ForExpression", Type.FOR,
+            out
+        );
+    }
 
     /**
      * declareexpression := vartypeliteral variable
@@ -143,19 +224,19 @@ public class Expressions {
         
         
         return new ASTNode<Type>(
-            "InitExpression", Type.EQUAL,
+            "DeclareExpression", Type.EQUAL,
             out
         );
     }
 
     /**
-     * assignexpression := variable 
-     *                         addsuboperator
-     *                       | muldivoperator
-     *                       | ""
-     *                     EQUALS 
-     *                         binaryexpression
-     *                       | stringliteral
+     * assignexpression := variable
+     *                         EQUALS 
+     *                             binaryexpression
+     *                           | stringliteral
+     *                    | assignoperator
+     *                         ""
+     *                       | binaryexpression
      */
     public static ASTNode<Type> AssignExpression(Parser p) throws ParseException {
         List<AST> out = new ArrayList<AST>();
@@ -163,23 +244,36 @@ public class Expressions {
         out.add(Variable(p));
 
         Type nextType = p.l.nextType();
-        // addsuboperator
-        if (nextType.within(Type.PLUS, Type.MINUS))
-            out.add(Operators.AddSubOperator(p));
-        // muldivoperator
-        else if (nextType.within(Type.MUL, Type.DIV))
-            out.add(Operators.MulDivOperator(p));
-        
         // EQUALS
-        p.eat(Type.EQUAL);
+        if (nextType == Type.EQUAL) {
+            p.eat(Type.EQUAL);
 
-        nextType = p.l.nextType();
-        // stringliteral
-        if (nextType == Type.STR)
-            out.add(Literals.StringLiteral(p));
-        // binaryexpression
-        else
-            out.add(BinaryExpression(p));
+            nextType = p.l.nextType();
+            // stringliteral
+            if (nextType == Type.STR)
+                out.add(Literals.StringLiteral(p));
+            // binaryexpression
+            else
+                out.add(BinaryExpression(p));
+        } else {
+            Type[] temp = Operators.AssignOperator(p);
+            // temp list to add to manual addition node
+            List<AST> addNode = new ArrayList<AST>();
+
+            addNode.add(out.get(0));
+            // +=
+            if (temp[0] != temp[1])
+                // x+=1 -> x=x+1
+                addNode.add(BinaryExpression(p));
+            // ++
+            else
+                addNode.add(new ASTValue<Integer>("IntLiteral", 1));
+            
+            out.add(new ASTNode<Type>(
+                "BinaryExpression", temp[0],
+                addNode
+            ));
+        }
         
         return new ASTNode<Type>(
             "AssignExpression", Type.EQUAL,
@@ -188,10 +282,10 @@ public class Expressions {
     }
 
     /**
-     * ifexpression := IF LP boolexpression RP LB blockstatementbody RB
+     * ifexpression := IF LPAREN boolexpression RPAREN LB blockstatementbody RB
      *                     ""
      *                   | ELSE LB blockstatementlist RB
-     *                   | ELSE evalblockstatement<IF>
+     *                   | ELSE ifexpression
      */
     public static ASTNode<Type> IfExpression(Parser p) throws ParseException {
         final String name = "IfExpression";
@@ -207,12 +301,15 @@ public class Expressions {
         p.eat(Type.RB);
         
         Type nextType = p.l.nextType();
+        // ELSE
         if (nextType == Type.ELSE) {
             p.eat(nextType);
 
             nextType = p.l.nextType();
+            // ifexpression
             if (nextType == Type.IF)
                 out.add(IfExpression(p));
+            // LB blockstatementlist RB
             else {
                 p.eat(Type.LB);
                 out.add(BlockStatementBody(p));
@@ -266,7 +363,7 @@ public class Expressions {
 
     /**
      * boolfactor := NOT boolfactor
-     *             | LP boolexpression RP
+     *             | LPAREN boolexpression RPAREN
      *             | binaryexpression
      *             | truefalseliteral
      *             | VAR
@@ -284,7 +381,7 @@ public class Expressions {
             );
         }
 
-        // LP boolexpression RP
+        // LPAREN boolexpression RPAREN
         if (nextType == Type.LPAREN) {
             p.eat(Type.LPAREN);
             AST temp = BoolExpression(p);
@@ -328,6 +425,7 @@ public class Expressions {
      * term := factor muldivoperator term
      *       | factor
      */
+    // TODO: add higher precedence exponent **
     public static AST Term(Parser p) throws ParseException {
         AST temp = Factor(p);
 
@@ -350,7 +448,7 @@ public class Expressions {
      *             | PLUS
      *           variable
      *         | numberliteral
-     *         | LP binaryexpression RP
+     *         | LPAREN binaryexpression RPAREN
      */
     public static AST Factor(Parser p) throws ParseException {
         final String name = "Factor";
@@ -386,7 +484,7 @@ public class Expressions {
                     Variable(p)
                 );
 
-        // LP binaryexpression RP
+        // LPAREN binaryexpression RPAREN
         if (nextType == Type.LPAREN) {
             p.eat(Type.LPAREN);
             AST temp = BinaryExpression(p);

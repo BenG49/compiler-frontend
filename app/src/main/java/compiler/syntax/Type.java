@@ -7,7 +7,6 @@ public enum Type {
     // https://regexr.com
 
     BLOCKCOMMENT(   "\\G\\/\\*(\\*(?!\\/)|[^*])*\\*\\/"),
-    // TODO: does not remove newline character
     LINECOMMENT(    "\\G\\/\\/.*+\n"),
 
     INT(    "\\G\\d+"),
@@ -20,7 +19,6 @@ public enum Type {
     GREATER_EQUAL(  "\\G(>=)"),
     LESS(   "\\G<"),
     GREATER("\\G>"),
-    // TODO: add equals set
     // if (a =| 1, 3, 5) -> if a is equal to 1, 3, or 5
     OR(     "\\G(\\|\\|)"),
     AND(    "\\G(\\&\\&)"),
@@ -31,12 +29,13 @@ public enum Type {
     MUL(    "\\G\\*"),
     DIV(    "\\G/"),
     EQUAL(  "\\G="),
-    // TODO: add +=,  -=, ++, --, *=, **, etc
+    EXP(    "\\G(\\*\\*)"),
 
     LPAREN( "\\G\\("),
     RPAREN( "\\G\\)"),
     LB(     "\\G\\{"),
     RB(     "\\G\\}"),
+    COMMA(  "\\G,"),
     
     // reserved words
     INT_ID( "\\G(int)"),
@@ -51,6 +50,7 @@ public enum Type {
 
     NEWLINE("\\G(\r\n|\r|\n)"),
 
+    FUNC("\\G[A-z]+[A-z\\d]*\\("),
     VAR("\\G[A-z]+[A-z\\d]*");
 
     private static final EnumSet<Type> allOf;

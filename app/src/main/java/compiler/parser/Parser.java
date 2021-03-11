@@ -20,9 +20,6 @@ public class Parser {
         return Expressions.Program(this);
     }
 
-    public String eat(Type type) throws ParseException {
-        return eat(new Type[] {type});
-    }
     public String eat(Type... type) throws ParseException {
         Token token = l.next();
         if (token == null)
