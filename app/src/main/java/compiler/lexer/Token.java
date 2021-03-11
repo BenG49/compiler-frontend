@@ -17,6 +17,8 @@ public class Token {
         STR( "\\G\"(.*?)\""),
 
         EQUIVALENT( "\\G(==)"),
+        LESS_EQUAL(     "\\G(<=)"),
+        GREATER_EQUAL(  "\\G(>=)"),
         LESS(   "\\G<"),
         GREATER("\\G>"),
         OR(     "\\G(\\|\\|)"),
@@ -27,7 +29,7 @@ public class Token {
         MINUS(  "\\G\\-"),
         MUL(    "\\G\\*"),
         DIV(    "\\G/"),
-        EQUALS( "\\G="),
+        EQUAL(  "\\G="),
         LP(     "\\G\\("),
         RP(     "\\G\\)"),
         LB(     "\\G\\{"),

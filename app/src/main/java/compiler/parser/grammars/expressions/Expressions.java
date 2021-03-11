@@ -6,16 +6,15 @@ import java.util.List;
 import compiler.exception.*;
 import compiler.lexer.Token.Type;
 import compiler.parser.Parser;
-import compiler.parser.grammars.Node;
-import compiler.parser.grammars.ValueNode;
+import compiler.parser.grammars.ast.*;
 
 public class Expressions {
     /**
      * program := statementlist
      */
-    public static Node Program(Parser p) throws ParseException {
-        return new Node(
-            "Program",
+    public static ASTNode<String> Program(Parser p) throws ParseException {
+        return new ASTNode<String>(
+            "Program", "",
             StatementList(p)
         );
     }
@@ -23,16 +22,16 @@ public class Expressions {
     /**
      * statementlist := statement...
      */
-    public static Node StatementList(Parser p) throws ParseException {
-        List<Node> statements = new ArrayList<Node>();
+    public static ASTNode<String> StatementList(Parser p) throws ParseException {
+        List<AST> statements = new ArrayList<AST>();
         while (p.l.hasNext()) {
-            Node temp = Statement(p);
+            AST temp = Statement(p);
             if (temp != null)
                 statements.add(temp);
         }
 
-        return new Node(
-            "StatementList",
+        return new ASTNode<String>(
+            "StatementList", "-",
             statements
         );
     }
@@ -45,8 +44,8 @@ public class Expressions {
      *                | ""
      *              NEWLINE
      */
-    public static Node Statement(Parser p) throws ParseException {
-        Node out;
+    public static ASTNode<String> Statement(Parser p) throws ParseException {
+        AST out;
         Type nextType = p.l.nextType();
 
         // ifexpression
@@ -62,43 +61,44 @@ public class Expressions {
         else if (nextType == Type.VAR)
             out = AssignExpression(p);
         else {
-            p.tryNextToken(Type.NEWLINE);
+            p.eat(Type.NEWLINE);
             return null;
         }
 
-        p.tryNextToken(Type.NEWLINE);
+        p.eat(Type.NEWLINE);
 
-        return new Node(
-            "Statement",
+        return new ASTNode<String>(
+            "Statement", "",
             out
         );
     }
 
     /**
+     * TODO: add else statement
      * evalblockstatement := BLOCK_TYPE LP boolexpression RP LB statement... RB
      */
-    public static Node EvalBlockStatement(Parser p, Type blockType) throws ParseException {
-        List<Node> out = new ArrayList<Node>();
+    public static ASTNode<Type> EvalBlockStatement(Parser p, Type blockType) throws ParseException {
+        List<AST> out = new ArrayList<AST>();
 
-        p.tryNextToken(blockType);
-        p.tryNextToken(Type.LP);
+        p.eat(blockType);
+        p.eat(Type.LP);
         out.add(BoolExpression(p));
-        p.tryNextToken(Type.RP);
-        p.tryNextToken(Type.LB);
+        p.eat(Type.RP);
+        p.eat(Type.LB);
 
         // while the type isn't RB
         Type nextType = p.l.nextType();
         while (nextType != Type.RB) {
-            Node temp = Statement(p);
+            AST temp = Statement(p);
             if (temp != null)
                 out.add(temp);
             nextType = p.l.nextType();
         }
 
-        p.tryNextToken(Type.RB);
+        p.eat(Type.RB);
 
-        return new Node(
-            "EvalBlockStatement: "+blockType,
+        return new ASTNode<Type>(
+            "EvalBlockStatement", blockType,
             out
         );
     }
@@ -110,15 +110,15 @@ public class Expressions {
      *                              binaryexpression
      *                            | stringliteral
      */
-    public static Node DeclareExpression(Parser p) throws ParseException {
-        List<Node> out = new ArrayList<Node>();
+    public static ASTNode<Type> DeclareExpression(Parser p) throws ParseException {
+        List<AST> out = new ArrayList<AST>();
         // <vartypeliteral>
         out.add(Literals.VarTypeLiteral(p));
         // <variable>
         out.add(Variable(p));
 
         // EQUALS
-        p.tryNextToken(Type.EQUALS);
+        p.eat(Type.EQUAL);
         
         Type nextType = p.l.nextType();
         // <stringliteral>
@@ -129,8 +129,8 @@ public class Expressions {
             out.add(BinaryExpression(p));
         
         
-        return new Node(
-            "InitExpression",
+        return new ASTNode<Type>(
+            "InitExpression", Type.EQUAL,
             out
         );
     }
@@ -144,8 +144,8 @@ public class Expressions {
      *                         binaryexpression
      *                       | stringliteral
      */
-    public static Node AssignExpression(Parser p) throws ParseException {
-        List<Node> out = new ArrayList<Node>();
+    public static ASTNode<Type> AssignExpression(Parser p) throws ParseException {
+        List<AST> out = new ArrayList<AST>();
         // variable
         out.add(Variable(p));
 
@@ -158,7 +158,7 @@ public class Expressions {
             out.add(Operators.MulDivOperator(p));
         
         // EQUALS
-        p.tryNextToken(Type.EQUALS);
+        p.eat(Type.EQUAL);
 
         nextType = p.l.nextType();
         // stringliteral
@@ -168,8 +168,8 @@ public class Expressions {
         else
             out.add(BinaryExpression(p));
         
-        return new Node(
-            "AssignExpression",
+        return new ASTNode<Type>(
+            "AssignExpression", Type.EQUAL,
             out
         );
     }
@@ -177,7 +177,7 @@ public class Expressions {
     /**
      * ifexpression := IF LP boolexpression RP LB statement... RB
      */
-    public static Node IfExpression(Parser p) throws ParseException {
+    public static ASTNode<Type> IfExpression(Parser p) throws ParseException {
         return EvalBlockStatement(p, Type.IF);
     }
 
@@ -185,40 +185,36 @@ public class Expressions {
      * boolexpression := boolterm andoroperator boolterm
      *                 | boolterm
      */
-    public static Node BoolExpression(Parser p) throws ParseException {
-        List<Node> expression = new ArrayList<Node>();
-        expression.add(BoolTerm(p));
+    public static AST BoolExpression(Parser p) throws ParseException {
+        AST temp = BoolTerm(p);
 
         Type nextType = p.l.nextType();
-        if (nextType.within(Type.AND, Type.OR)) {
-            expression.add(Operators.AndOrOperator(p));
-            expression.add(BoolTerm(p));
-        }
+        if (nextType.within(Type.AND, Type.OR))
+            return new ASTNode<Type>(
+                "BoolExpression", nextType,
+                temp, BoolTerm(p)
+            );
 
-        return new Node(
-            "BoolExpression",
-            expression
-        );
+        return temp;
     }
 
     /**
      * boolterm := boolfactor compareoperator boolfactor
      *           | boolfactor
      */
-    public static Node BoolTerm(Parser p) throws ParseException {
-        List<Node> expression = new ArrayList<Node>();
-        expression.add(BoolFactor(p));
+    public static AST BoolTerm(Parser p) throws ParseException {
+        AST temp = BoolFactor(p);
 
         Type nextType = p.l.nextType();
-        if (nextType.within(Type.EQUIVALENT, Type.GREATER, Type.LESS)) {
-            expression.add(Operators.CompareOperator(p));
-            expression.add(BoolFactor(p));
+        if (nextType.within(Type.EQUIVALENT, Type.GREATER, Type.LESS, Type.GREATER_EQUAL, Type.LESS_EQUAL)) {
+            p.eat(nextType);
+            return new ASTNode<Type>(
+                "BoolTerm", nextType,
+                temp, BoolFactor(p)
+            );
         }
 
-        return new Node(
-            "BoolTerm",
-            expression
-        );
+        return temp;
     }
 
     /**
@@ -228,113 +224,131 @@ public class Expressions {
      *             | truefalseliteral
      *             | VAR
      */
-    public static Node BoolFactor(Parser p) throws ParseException {
+    public static AST BoolFactor(Parser p) throws ParseException {
+        final String name = "BoolFactor";
         Type nextType = p.l.nextType();
-        Node out;
 
         // NOT boolfactor
         if (nextType == Type.NOT) {
-            p.tryNextToken(Type.NOT);
-            out = BoolFactor(p);
+            p.eat(Type.NOT);
+            return new ASTNode<Type>(
+                name, nextType,
+                BoolFactor(p)
+            );
         // LP boolexpression RP
         } else if (nextType == Type.LP) {
-            p.tryNextToken(Type.LP);
-            out = BoolExpression(p);
-            p.tryNextToken(Type.RP);
+            p.eat(Type.LP);
+            AST temp = BoolExpression(p);
+            p.eat(Type.RP);
+            System.out.println("see where this would show up");
+                return Literals.TrueFalseLiteral(p);
         // truefalseliteral
         } else if (nextType.within(Type.TRUE, Type.FALSE))
-            out = Literals.TrueFalseLiteral(p);
+            return Literals.TrueFalseLiteral(p);
         // VAR
         else if (nextType == Type.VAR)
-            out = Variable(p);
+            return Variable(p);
         // binaryexpression
         else
-            out = BinaryExpression(p);
-        
-        return new Node(
-            "BoolFactor",
-            out
-        );
+            return BinaryExpression(p);
     }
 
     /**
-     * binaryexpression :=     addsuboperator
-     *                       | ""
-     *                             term addsuboperator binaryexpression
-     *                           | term
+     * binaryexpression := term addsuboperator binaryexpression
+     *                   | term
      */
-    public static Node BinaryExpression(Parser p) throws ParseException {
-        List<Node> expression = new ArrayList<Node>();
+    public static AST BinaryExpression(Parser p) throws ParseException {
+        AST temp = Term(p);
+
         Type nextType = p.l.nextType();
-
-        // PLUS | MINUS
-        if (nextType.within(Type.PLUS, Type.MINUS))
-            expression.add(Operators.AddSubOperator(p));
-        
-        expression.add(Term(p));
-
-        nextType = p.l.nextType();
-        // addsuboperator binaryexpression
+        // ADD|SUB binaryexpression
         if (nextType.within(Type.PLUS, Type.MINUS)) {
-            expression.add(Operators.AddSubOperator(p));
-            expression.add(BinaryExpression(p));
+            p.eat(nextType);
+            return new ASTNode<Type>(
+                "BinaryExpression", nextType,
+                temp, BinaryExpression(p)
+            );
         }
 
-        return new Node(
-            "BinaryExpression",
-            expression
-        );
+        return temp;
     }
 
     /**
      * term := factor muldivoperator term
      *       | factor
      */
-    public static Node Term(Parser p) throws ParseException {
-        List<Node> term = new ArrayList<Node>();
-
-        term.add(Factor(p));
+    public static AST Term(Parser p) throws ParseException {
+        AST temp = Factor(p);
 
         Type nextType = p.l.nextType();
-        // muldivoperator term
+        // MUL|DIV term
         if (nextType.within(Type.MUL, Type.DIV)) {
-            term.add(Operators.MulDivOperator(p));
-            term.add(Term(p));
+            p.eat(nextType);
+            return new ASTNode<Type>(
+                "Term", nextType,
+                temp, Term(p)
+            );
         }
 
-        return new Node(
-            "Term",
-            term
-        );
+        return temp;
     }
 
     /**
-     * factor := variable
+     * factor :=     ""
+     *             | MINUS
+     *             | PLUS
+     *           variable
      *         | numberliteral
      *         | LP binaryexpression RP
      */
-    public static Node Factor(Parser p) throws ParseException {
+    public static AST Factor(Parser p) throws ParseException {
+        final String name = "Factor";
+
         Type nextType = p.l.nextType();
-        Node out;
+        Type preceedingSign = null;
+
+        if (nextType.within(Type.MINUS, Type.PLUS)) {
+            preceedingSign = nextType;
+            p.eat(nextType);
+        }
 
         // numberliteral
-        if (nextType.within(Type.INT, Type.FLOAT))
-            out = Literals.NumberLiteral(p);
+        if (nextType.within(Type.INT, Type.FLOAT)) {
+            if (preceedingSign == null)
+                return Literals.NumberLiteral(p);
+            else
+                return new ASTNode<Type>(
+                    name, preceedingSign,
+                    Literals.NumberLiteral(p)
+                );
+        }
+
         // variable
-        else if (nextType == Type.VAR)
-            out = Variable(p);
+        if (nextType == Type.VAR)
+            if (preceedingSign == null)
+                return Variable(p);
+            else
+                return new ASTNode<Type>(
+                    name, preceedingSign,
+                    Variable(p)
+                );
+
         // LP binaryexpression RP
-        else if (nextType == Type.LP) {
-            p.tryNextToken(Type.LP);
-            out = BinaryExpression(p);
-            p.tryNextToken(Type.RP);
-        } else
-            throw new TokenTypeException(nextType, "Variable, NumberLiteral, (BinaryExpression)", p.l.getPos());
+        if (nextType == Type.LP) {
+            p.eat(Type.LP);
+            AST temp = BinaryExpression(p);
+            p.eat(Type.RP);
+
+            if (preceedingSign == null)
+                return temp;
+            else
+                return new ASTNode<Type>(
+                    name, preceedingSign,
+                    temp
+                );
+        }
         
-        return new Node(
-            "Factor",
-            out
-        );
+        throw new TokenTypeException(nextType, "Variable, NumberLiteral, (BinaryExpression)", p.l.getPos());
     }
 
     /**
@@ -342,8 +356,8 @@ public class Expressions {
      *           | TRUE
      *           | FALSE
      */
-    public static ValueNode<String> Variable(Parser p) throws ParseException {
-        return new ValueNode<String>(
+    public static ASTValue<String> Variable(Parser p) throws ParseException {
+        return new ASTValue<String>(
             "Variable",
             p.tryNextToken(Type.VAR, Type.TRUE, Type.FALSE)
         );

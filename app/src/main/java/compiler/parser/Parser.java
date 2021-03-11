@@ -3,7 +3,7 @@ package compiler.parser;
 import compiler.exception.*;
 import compiler.lexer.*;
 import compiler.lexer.Token.Type;
-import compiler.parser.grammars.*;
+import compiler.parser.grammars.ast.AST;
 import compiler.parser.grammars.expressions.Expressions;
 
 public class Parser {
@@ -14,17 +14,13 @@ public class Parser {
         this.s = s;
     }
 
-    public Node parse() throws ParseException {
+    public AST parse() throws ParseException {
         l = new Lexer(s);
 
         return Expressions.Program(this);
     }
 
-    public int getStatementCount() {
-        return s.split("\n").length;
-    }
-
-    public String tryNextToken(Type type) throws ParseException {
+    public String eat(Type type) throws ParseException {
         return tryNextToken(new Type[] {type});
     }
     public String tryNextToken(Type... type) throws ParseException {
