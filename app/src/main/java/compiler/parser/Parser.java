@@ -1,5 +1,7 @@
 package compiler.parser;
 
+import java.util.List;
+
 import compiler.exception.parse.*;
 import compiler.lexer.*;
 import compiler.syntax.Type;
@@ -20,6 +22,10 @@ public class Parser {
         return Expressions.Program(this);
     }
 
+    public String eat(List<Type> type) throws ParseException {
+        Type[] array = new Type[type.size()];
+        return eat(type.toArray(array));
+    }
     public String eat(Type... type) throws ParseException {
         Token token = l.next();
         if (token == null)

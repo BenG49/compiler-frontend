@@ -9,8 +9,8 @@ public enum Type {
     BLOCKCOMMENT(   "\\G\\/\\*(\\*(?!\\/)|[^*])*\\*\\/"),
     LINECOMMENT(    "\\G\\/\\/.*+\n"),
 
+    FLOAT(  "\\G\\d+\\.\\d+"),
     INT(    "\\G\\d+"),
-    FLOAT(  "\\G\\d+[.]\\d+"),
     // https://stackoverflow.com/questions/171480/regex-grabbing-values-between-quotation-marks
     STR(    "\\G\"(.*?)\""),
 
@@ -41,16 +41,18 @@ public enum Type {
     INT_ID( "\\G(int)"),
     FLOAT_ID("\\G(float)"),
     STR_ID( "\\G(str)"),
+    BOOL_ID("\\G(bool)"),
     IF(     "\\G(if)"),
     ELSE(   "\\G(else)"),
     TRUE(   "\\G(true)"),
     FALSE(  "\\G(false)"),
     WHILE(  "\\G(while)"),
     FOR(    "\\G(for)"),
+    VOID(   "\\G(void)"),
 
     NEWLINE("\\G(\r\n|\r|\n)"),
 
-    FUNC("\\G[A-z]+[A-z\\d]*\\("),
+    FUNC("\\G[A-z]+[A-z\\d]*\\s*\\("),
     VAR("\\G[A-z]+[A-z\\d]*");
 
     private static final EnumSet<Type> allOf;
@@ -74,7 +76,7 @@ public enum Type {
     }
 
     public static Type[] getVarTypes() {
-        return new Type[] { INT_ID, FLOAT_ID, STR_ID };
+        return new Type[] { INT_ID, FLOAT_ID, STR_ID, BOOL_ID };
     }
 
     public boolean within(Type... types) {

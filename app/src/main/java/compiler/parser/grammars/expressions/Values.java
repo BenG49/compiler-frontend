@@ -1,11 +1,15 @@
 package compiler.parser.grammars.expressions;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import compiler.exception.parse.*;
 import compiler.parser.Parser;
 import compiler.parser.grammars.ast.*;
 import compiler.syntax.Type;
 
-public class Literals {
+public class Values {
     /**
      * vartypeliteral := VAR_TYPES
      */
@@ -15,6 +19,23 @@ public class Literals {
 
         return new ASTValue<Type>(
             "VarTypeLiteral",
+            out
+        );
+    }
+
+    /**
+     * returntypeliteral := VAR_TYPES
+     *                    | VOID
+     */
+    public static ASTValue<Type> ReturnTypeLiteral(Parser p) throws ParseException {
+        Type out = p.l.nextType();
+        List<Type> temp = new ArrayList<Type>(Arrays.asList(Type.getVarTypes()));
+        temp.add(Type.VOID);
+
+        p.eat(temp);
+
+        return new ASTValue<Type>(
+            "ReturnTypeLiteral",
             out
         );
     }
@@ -79,6 +100,16 @@ public class Literals {
         return new ASTValue<Float>(
             "FloatLiteral",
             Float.parseFloat(p.eat(Type.FLOAT))
+        );
+    }
+
+    /**
+     * variable := VAR
+     */
+    public static ASTValue<String> Variable(Parser p) throws ParseException {
+        return new ASTValue<String>(
+            "Variable",
+            p.eat(Type.VAR)
         );
     }
 

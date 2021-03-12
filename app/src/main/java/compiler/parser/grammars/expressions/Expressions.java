@@ -43,6 +43,7 @@ public class Expressions {
      *                | whilestatement
      *                | forstatement
      *                | functioncall
+     *                | functiondeclaration
      *                | ""
      *              NEWLINE
      */
@@ -63,8 +64,8 @@ public class Expressions {
             out = WhileStatement(p);
         else if (nextType == Type.FOR)
             out = ForStatement(p);
-        else if (nextType == Type.FUNC)
-            out = FunctionCall(p);
+        else if (nextType == Type.VOID)
+            out = FunctionDeclaration(p, null);
         else {
             p.eat(Type.NEWLINE);
             return null;
@@ -76,9 +77,45 @@ public class Expressions {
     }
     
     /**
-     * functioncall := VAR LPAREN 
+     * functiondeclaration :=     vartypeliteral
+     *                          | VOID
+     *                       FUNC
+     *                            typedvariable...
+     *                       RPAREN LB blockstatementlist RB
+     */
+    public static ASTNode<String> FunctionDeclaration(Parser p, Type r) throws ParseException {
+        List<AST> out = new ArrayList<AST>();
+
+        if (r == null)
+            out.add(Values.ReturnTypeLiteral(p));
+        else
+            out.add(new ASTNode<Type>("ReturnTypeLiteral", r));
+        String name = p.eat(Type.FUNC);
+
+        Type nextType = p.l.nextType();
+        while (nextType != Type.RPAREN) {
+            out.add(TypedVariable(p));
+            nextType = p.l.nextType();
+            if (nextType != Type.RPAREN)
+                p.eat(Type.COMMA);
+        }
+        
+        p.eat(Type.RPAREN);
+        p.eat(Type.LB);
+        out.add(BlockStatementList(p));
+        p.eat(Type.RB);
+
+        return new ASTNode<String>(
+            "FunctionDeclaration", name.substring(0, name.length()-1).replaceAll(" ", ""),
+            out
+        );
+    }
+    
+    /**
+     * functioncall := FUNC 
      *                     binaryexpression
      *                   | stringliteral
+     *                   | truefalseliteral
      *                   | VAR
      *                 COMMA
      *                 ...
@@ -90,10 +127,16 @@ public class Expressions {
         Type nextType = p.l.nextType();
 
         while (nextType != Type.RPAREN) {
+            // VAR
             if (nextType == Type.VAR)
-                out.add(Variable(p));
+                out.add(Values.Variable(p));
+            // stringliteral
             else if (nextType == Type.STR)
-                out.add(Literals.StringLiteral(p));
+                out.add(Values.StringLiteral(p));
+            // truefalseliteral
+            else if (nextType.within(Type.TRUE, Type.FALSE))
+                out.add(Values.TrueFalseLiteral(p));
+            // binaryexpression
             else
                 out.add(BinaryExpression(p));
             
@@ -106,15 +149,15 @@ public class Expressions {
         p.eat(Type.RPAREN);
 
         return new ASTNode<String>(
-            "FunctionCall", func.substring(0, func.length()-1),
+            "FunctionCall", func.substring(0, func.length()-1).replaceAll(" ", ""),
             out
         );
     }
 
     /**
-     * blockstatementbody := statement... RB
+     * blockstatementlist := statement... RB
      */
-    public static ASTNode<String> BlockStatementBody(Parser p) throws ParseException {
+    public static ASTNode<String> BlockStatementList(Parser p) throws ParseException {
         List<AST> statements = new ArrayList<AST>();
         Type nextType = p.l.nextType();
         while (nextType != Type.RB) {
@@ -127,13 +170,13 @@ public class Expressions {
         }
 
         return new ASTNode<String>(
-            "BlockStatementBody", "",
+            "BlockStatementList", "",
             statements
         );
     }
 
     /**
-     * whilestatement := WHILE LPAREN boolexpression RPAREN LB blockstatementbody RB
+     * whilestatement := WHILE LPAREN boolexpression RPAREN LB blockstatementlist RB
      */
     public static ASTNode<Type> WhileStatement(Parser p) throws ParseException {
         List<AST> out = new ArrayList<AST>();
@@ -143,7 +186,7 @@ public class Expressions {
         out.add(BoolExpression(p));
         p.eat(Type.RPAREN);
         p.eat(Type.LB);
-        out.add(BlockStatementBody(p));
+        out.add(BlockStatementList(p));
         p.eat(Type.RB);
 
         return new ASTNode<Type>(
@@ -163,7 +206,7 @@ public class Expressions {
      *                             assignstatement
      *                           | ""
      *                   | vartypeliteral variable IN iterable
-     *                 RPAREN LB blockstatementbody RB
+     *                 RPAREN LB blockstatementlist RB
      */
     public static ASTNode<Type> ForStatement(Parser p) throws ParseException {
         List<AST> out = new ArrayList<AST>();
@@ -188,7 +231,7 @@ public class Expressions {
 
         p.eat(Type.RPAREN);
         p.eat(Type.LB);
-        out.add(BlockStatementBody(p));
+        out.add(BlockStatementList(p));
         p.eat(Type.RB);
 
         return new ASTNode<Type>(
@@ -198,18 +241,21 @@ public class Expressions {
     }
 
     /**
-     * declarestatement := vartypeliteral variable
+     * declarestatement := typedvariable
      *                         ""
      *                       | EQUALS 
      *                             binaryexpression
      *                           | stringliteral
+     *                           | truefalseliteral
      */
-    public static ASTNode<Type> DeclareStatement(Parser p) throws ParseException {
+    public static AST DeclareStatement(Parser p) throws ParseException {
         List<AST> out = new ArrayList<AST>();
+        Type temp = p.l.nextType();
         // vartypeliteral
-        out.add(Literals.VarTypeLiteral(p));
-        // variable
-        out.add(Variable(p));
+        out.add(TypedVariable(p));
+
+        if (p.l.nextType() == Type.FUNC)
+            return FunctionDeclaration(p, temp);
 
         // EQUALS
         p.eat(Type.EQUAL);
@@ -217,7 +263,10 @@ public class Expressions {
         Type nextType = p.l.nextType();
         // stringliteral
         if (nextType == Type.STR)
-            out.add(Literals.StringLiteral(p));
+            out.add(Values.StringLiteral(p));
+        // truefalseliteral
+        else if (nextType.within(Type.TRUE, Type.FALSE))
+            out.add(Values.TrueFalseLiteral(p));
         // binaryexpression
         else
             out.add(BinaryExpression(p));
@@ -234,6 +283,7 @@ public class Expressions {
      *                        EQUALS 
      *                            binaryexpression
      *                          | stringliteral
+     *                          | truefalseliteral
      *                   | assignoperator
      *                        ""
      *                      | binaryexpression
@@ -241,7 +291,7 @@ public class Expressions {
     public static ASTNode<Type> AssignStatement(Parser p) throws ParseException {
         List<AST> out = new ArrayList<AST>();
         // variable
-        out.add(Variable(p));
+        out.add(Values.Variable(p));
 
         Type nextType = p.l.nextType();
         // EQUALS
@@ -251,7 +301,10 @@ public class Expressions {
             nextType = p.l.nextType();
             // stringliteral
             if (nextType == Type.STR)
-                out.add(Literals.StringLiteral(p));
+                out.add(Values.StringLiteral(p));
+            // truefalseliteal
+            else if (nextType.within(Type.TRUE, Type.FALSE))
+                out.add(Values.TrueFalseLiteral(p));
             // binaryexpression
             else
                 out.add(BinaryExpression(p));
@@ -282,7 +335,7 @@ public class Expressions {
     }
 
     /**
-     * ifstatement := IF LPAREN boolexpression RPAREN LB blockstatementbody RB
+     * ifstatement := IF LPAREN boolexpression RPAREN LB blockstatementlist RB
      *                    ""
      *                  | ELSE LB blockstatementlist RB
      *                  | ELSE ifstatement
@@ -297,7 +350,7 @@ public class Expressions {
         p.eat(Type.RPAREN);
 
         p.eat(Type.LB);
-        out.add(BlockStatementBody(p));
+        out.add(BlockStatementList(p));
         p.eat(Type.RB);
         
         Type nextType = p.l.nextType();
@@ -312,7 +365,7 @@ public class Expressions {
             // LB blockstatementlist RB
             else {
                 p.eat(Type.LB);
-                out.add(BlockStatementBody(p));
+                out.add(BlockStatementList(p));
                 p.eat(Type.RB);
             }
         }
@@ -366,7 +419,7 @@ public class Expressions {
      *             | LPAREN boolexpression RPAREN
      *             | binaryexpression
      *             | truefalseliteral
-     *             | VAR
+     *             | variable
      */
     public static AST BoolFactor(Parser p) throws ParseException {
         final String name = "BoolFactor";
@@ -391,11 +444,11 @@ public class Expressions {
 
         // truefalseliteral
         if (nextType.within(Type.TRUE, Type.FALSE))
-            return Literals.TrueFalseLiteral(p);
+            return Values.TrueFalseLiteral(p);
 
-        // VAR
+        // variable
         if (nextType == Type.VAR)
-            return Variable(p);
+            return Values.Variable(p);
 
         // binaryexpression
         return BinaryExpression(p);
@@ -466,22 +519,22 @@ public class Expressions {
         // numberliteral
         if (nextType.within(Type.INT, Type.FLOAT)) {
             if (preceedingSign == null)
-                return Literals.NumberLiteral(p);
+                return Values.NumberLiteral(p);
             else
                 return new ASTNode<Type>(
                     name, preceedingSign,
-                    Literals.NumberLiteral(p)
+                    Values.NumberLiteral(p)
                 );
         }
 
         // variable
         if (nextType == Type.VAR)
             if (preceedingSign == null)
-                return Variable(p);
+                return Values.Variable(p);
             else
                 return new ASTNode<Type>(
                     name, preceedingSign,
-                    Variable(p)
+                    Values.Variable(p)
                 );
 
         // LPAREN binaryexpression RPAREN
@@ -503,14 +556,15 @@ public class Expressions {
     }
 
     /**
-     * variable := VAR
-     *           | TRUE
-     *           | FALSE
+     * typedvariable := VAR_TYPES variable
      */
-    public static ASTValue<String> Variable(Parser p) throws ParseException {
-        return new ASTValue<String>(
-            "Variable",
-            p.eat(Type.VAR, Type.TRUE, Type.FALSE)
+    public static ASTNode<Type> TypedVariable(Parser p) throws ParseException {
+        Type op = p.l.nextType();
+        p.eat(Type.getVarTypes());
+
+        return new ASTNode<Type>(
+            "TypedVariable", op,
+            Values.Variable(p)
         );
     }
     
