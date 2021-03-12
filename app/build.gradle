@@ -6,6 +6,8 @@
  * User Manual available at https://docs.gradle.org/6.8.1/userguide/building_java_projects.html
  */
 
+buildscript { repositories { mavenCentral() }}
+
 plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     id 'application'
@@ -38,7 +40,7 @@ jar {
     }
 }
 
-spotless {
+/*spotless {
    java {
       googleJavaFormat().aosp()
 
@@ -48,7 +50,7 @@ spotless {
       importOrder('java', 'compiler.exception', 'compiler.lexer', 'compiler.parser', 'compiler.semantics')
       removeUnusedImports()
    }
-}
+}*/
 
 run {
     standardInput = System.in;
