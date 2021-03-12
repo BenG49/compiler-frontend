@@ -9,6 +9,7 @@
 plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     id 'application'
+    id "com.diffplug.spotless" version "5.10.2"
 }
 
 repositories {
@@ -32,9 +33,21 @@ application {
 jar {
     manifest {
         attributes(
-                'Main-Class': 'compiler.Main'
+            'Main-Class': 'compiler.Main'
         )
     }
+}
+
+spotless {
+   java {
+      googleJavaFormat().aosp()
+
+      trimTrailingWhitespace()
+      endWithNewline()
+
+      importOrder('java', 'compiler.exception', 'compiler.lexer', 'compiler.parser', 'compiler.semantics')
+      removeUnusedImports()
+   }
 }
 
 run {

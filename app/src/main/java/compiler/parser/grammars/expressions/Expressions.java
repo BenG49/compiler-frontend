@@ -80,7 +80,7 @@ public class Expressions {
      * functiondeclaration :=     vartypeliteral
      *                          | VOID
      *                       FUNC
-     *                            typedvariable...
+     *                            vartypeliteral variable...
      *                       RPAREN LB blockstatementlist RB
      */
     public static ASTNode<String> FunctionDeclaration(Parser p, Type r) throws ParseException {
@@ -94,7 +94,8 @@ public class Expressions {
 
         Type nextType = p.l.nextType();
         while (nextType != Type.RPAREN) {
-            out.add(TypedVariable(p));
+            out.add(Values.VarTypeLiteral(p));
+            out.add(Values.Variable(p));
             nextType = p.l.nextType();
             if (nextType != Type.RPAREN)
                 p.eat(Type.COMMA);
@@ -284,26 +285,43 @@ public class Expressions {
     }
 
     /**
-     * declarestatement := typedvariable
+     * declarestatement := vartypeliteral variable
      *                         ""
+     *                       | COMMA variable...
      *                       | EQUALS 
      *                             binaryexpression
      *                           | stringliteral
      *                           | truefalseliteral
+     *                             ""
      */
     public static AST DeclareStatement(Parser p) throws ParseException {
         List<AST> out = new ArrayList<AST>();
         Type temp = p.l.nextType();
-        // vartypeliteral
-        out.add(TypedVariable(p));
+        // variable
+        out.add(Values.VarTypeLiteral(p));
+        out.add(Values.Variable(p));
 
-        if (p.l.nextType() == Type.FUNC)
+        Type nextType = p.l.nextType();
+        if (nextType == Type.FUNC)
             return FunctionDeclaration(p, temp);
+        
+        if (nextType == Type.COMMA) {
+            while (nextType != Type.NEWLINE) {
+                p.eat(Type.COMMA);
+                out.add(Values.Variable(p));
+                nextType = p.l.nextType();
+            }
+
+            return new ASTNode<Type>(
+                "DeclareExpression", Type.EQUAL,
+                out
+            );
+        }
 
         // EQUALS
         p.eat(Type.EQUAL);
         
-        Type nextType = p.l.nextType();
+        nextType = p.l.nextType();
         // stringliteral
         if (nextType == Type.STR)
             out.add(Values.StringLiteral(p));
@@ -416,19 +434,6 @@ public class Expressions {
         return new ASTNode<Type>(
             name, Type.IF,
             out
-        );
-    }
-
-    /**
-     * typedvariable := VAR_TYPES variable
-     */
-    public static ASTNode<Type> TypedVariable(Parser p) throws ParseException {
-        Type op = p.l.nextType();
-        p.eat(Type.getVarTypes());
-
-        return new ASTNode<Type>(
-            "TypedVariable", op,
-            Values.Variable(p)
         );
     }
     

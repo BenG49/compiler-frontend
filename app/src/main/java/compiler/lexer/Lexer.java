@@ -43,12 +43,6 @@ public class Lexer {
     }
 
     private Token nextToken() throws ParseException {
-        // Comments
-        input.usePattern(Type.BLOCKCOMMENT.getPattern());
-        input.find();
-        input.usePattern(Type.LINECOMMENT.getPattern());
-        input.find();
-
         // Inc line count
         input.usePattern(Type.NEWLINE.getPattern());
         if (input.find()) {
@@ -61,6 +55,12 @@ public class Lexer {
         input.usePattern(SPACE);
         if (input.find())
             index++;
+
+        // Comments
+        input.usePattern(Type.LINECOMMENT.getPattern());
+        input.find();
+        input.usePattern(Type.BLOCKCOMMENT.getPattern());
+        input.find();
         
         for (Type t : Type.getAllOf()) {
             input.usePattern(t.getPattern());
