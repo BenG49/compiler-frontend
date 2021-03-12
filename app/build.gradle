@@ -29,6 +29,14 @@ application {
     mainClass = 'compiler.Main'
 }
 
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'compiler.Main'
+        )
+    }
+}
+
 run {
     standardInput = System.in;
 }

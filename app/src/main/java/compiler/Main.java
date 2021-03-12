@@ -5,14 +5,17 @@ import compiler.lexer.Lexer;
 import compiler.parser.Parser;
 
 public class Main {
-    private static final String PATH = "/home/bg/code";
-    public static void main(String[] args) {
-        // testLexer();
-        testParser();
+    public static void main(String... args) {
+        try {
+            // testLexer(args[0]);
+            testParser(args[0]);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            System.out.println("Must give a file path argument!");
+        }
     }
 
-    public static void testParser() {
-        Parser p = new Parser(Reader.readFile(PATH));
+    public static void testParser(String path) {
+        Parser p = new Parser(Reader.readFile(path));
         try {
             System.out.println("Abstract Syntax Tree:\n");
             System.out.println(p.parse());
@@ -21,9 +24,9 @@ public class Main {
         }
     }
 
-    public static void testLexer() {
+    public static void testLexer(String path) {
         try {
-            Lexer l = new Lexer(Reader.readFile(PATH));
+            Lexer l = new Lexer(Reader.readFile(path));
             while (l.hasNext())
                 System.out.println(l.next());
         } catch (ParseException e) {
