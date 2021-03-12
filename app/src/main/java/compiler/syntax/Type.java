@@ -24,12 +24,12 @@ public enum Type {
     AND(    "\\G(\\&\\&)"),
     NOT(    "\\G!"),
 
-    PLUS(   "\\G\\+"),
-    MINUS(  "\\G\\-"),
+    EXP(    "\\G(\\*\\*)"),
+    EQUAL(  "\\G="),
     MUL(    "\\G\\*"),
     DIV(    "\\G/"),
-    EQUAL(  "\\G="),
-    EXP(    "\\G(\\*\\*)"),
+    PLUS(   "\\G\\+"),
+    MINUS(  "\\G\\-"),
 
     LPAREN( "\\G\\("),
     RPAREN( "\\G\\)"),
@@ -49,6 +49,7 @@ public enum Type {
     WHILE(  "\\G(while)"),
     FOR(    "\\G(for)"),
     VOID(   "\\G(void)"),
+    RETURN( "\\G(return)"),
 
     NEWLINE("\\G(\r\n|\r|\n)"),
 

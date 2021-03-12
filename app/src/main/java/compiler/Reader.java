@@ -21,7 +21,7 @@ public class Reader {
             reader.close();
             return output.toString();
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            System.out.println("Must give a valid file path!");
             return null;
         }
     }

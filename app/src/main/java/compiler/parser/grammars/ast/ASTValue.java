@@ -30,4 +30,13 @@ public class ASTValue<E> extends AST {
 
         return sb.toString();
     }
+
+    @Override
+    public void printTree(StringBuilder buffer, String prefix, String branchPrefix) {
+        buffer.append(prefix);
+        buffer.append(name);
+        buffer.append(": ");
+        buffer.append(value);
+        buffer.append("\n");
+    }
 }

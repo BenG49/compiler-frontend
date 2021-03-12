@@ -40,4 +40,20 @@ public class ASTNode<O> extends AST {
 
         return sb.toString();
     }
+
+    @Override
+    public void printTree(StringBuilder buffer, String prefix, String branchPrefix) {
+        buffer.append(prefix);
+        buffer.append(name);
+        buffer.append("<");
+        buffer.append(operator);
+        buffer.append(">\n");
+
+        for (int i = 0; i < branches.size(); i++) {
+            if (i+1 < branches.size())
+                branches.get(i).printTree(buffer, branchPrefix+"├── ", branchPrefix + "│   ");
+            else
+                branches.get(i).printTree(buffer, branchPrefix+"└── ", branchPrefix + "    ");
+        }
+    }
 }

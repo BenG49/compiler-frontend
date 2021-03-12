@@ -18,7 +18,9 @@ public class Main {
         Parser p = new Parser(Reader.readFile(path));
         try {
             System.out.println("Abstract Syntax Tree:\n");
-            System.out.println(p.parse());
+            StringBuilder out = new StringBuilder();
+            p.parse().printTree(out, "", "");
+            System.out.println(out.toString());
         } catch (ParseException e) {
             System.out.println(e);
         }
