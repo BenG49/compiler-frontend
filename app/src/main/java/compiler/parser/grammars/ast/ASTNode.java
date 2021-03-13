@@ -2,58 +2,53 @@ package compiler.parser.grammars.ast;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
-public class ASTNode<O> extends AST {
-    public String name;
+public class ASTNode<O, E> {
     public O operator;
-    public List<AST> branches;
+    public String name;
+    public List<E> branches;
 
-    public ASTNode(String name, O operator, AST... branches) {
-        this(name, operator, new ArrayList<AST>(Arrays.asList(branches)));
+    @SafeVarargs
+    public ASTNode(String name, O operator, E... branches) {
+        this(name, operator, new ArrayList<E>(Arrays.asList(branches)));
     }
-    public ASTNode(String name, O operator, List<AST> branches) {
+    public ASTNode(String name, O operator, List<E> branches) {
         this.name = name;
         this.operator = operator;
         this.branches = branches;
     }
-    
-    @Override
-    public String toString() {
-        return toString(0);
-    }
-    @Override
-    public String toString(int depth) {
-        StringBuilder sb = new StringBuilder();
 
-        sb.append("\n");
-        tabs(sb, depth);
-        if (depth > 0)
-            sb.append("--");
-        sb.append(name);
-        sb.append("<");
-        sb.append(operator);
-        sb.append(">");
-
-        for (AST n : branches)
-            sb.append(n.toString(depth+1));
-
-        return sb.toString();
-    }
-
-    @Override
+    // NOTE: ONLY HANDLES VALUE NODES WITH ONE BRANCH
     public void printTree(StringBuilder buffer, String prefix, String branchPrefix) {
+        StringBuilder tempBuffer = new StringBuilder();
+        for (int i = 0; i < branches.size(); i++) {
+            if (branches.get(i) instanceof ASTNode<?, ?>) {
+                ASTNode<?, ?> temp = (ASTNode<?, ?>)branches.get(i);
+                if (i+1 < branches.size())
+                    temp.printTree(tempBuffer, branchPrefix+"├── ", branchPrefix + "│   ");
+                else
+                    temp.printTree(tempBuffer, branchPrefix+"└── ", branchPrefix + "    ");
+            }
+        }
+
         buffer.append(prefix);
         buffer.append(name);
-        buffer.append("<");
-        buffer.append(operator);
-        buffer.append(">\n");
 
-        for (int i = 0; i < branches.size(); i++) {
-            if (i+1 < branches.size())
-                branches.get(i).printTree(buffer, branchPrefix+"├── ", branchPrefix + "│   ");
-            else
-                branches.get(i).printTree(buffer, branchPrefix+"└── ", branchPrefix + "    ");
+        if (tempBuffer.length() > 0) {
+            buffer.append("<");
+            buffer.append(operator);
+            buffer.append(">\n");
+            buffer.append(tempBuffer.toString());
+        } else {
+            buffer.append(": ");
+            buffer.append(branches.get(0));
+            buffer.append("\n");
         }
+    }
+
+    public Iterator<E> branchIterator() {
+        return branches.iterator();
     }
 }

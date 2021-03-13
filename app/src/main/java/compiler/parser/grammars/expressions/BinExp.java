@@ -1,9 +1,9 @@
 package compiler.parser.grammars.expressions;
 
+import compiler.exception.parse.LexException;
 import compiler.exception.parse.ParseException;
 import compiler.exception.parse.TokenTypeException;
 import compiler.parser.Parser;
-import compiler.parser.grammars.ast.AST;
 import compiler.parser.grammars.ast.ASTNode;
 import compiler.syntax.Type;
 
@@ -12,14 +12,14 @@ public class BinExp {
      * binaryexpression := term addsuboperator binaryexpression
      *                   | term
      */
-    public static AST BinaryExpression(Parser p) throws ParseException {
-        AST temp = Term(p);
+    public static ASTNode<?, ?> BinaryExpression(Parser p) throws ParseException, LexException {
+        ASTNode<?, ?> temp = Term(p);
 
         Type nextType = p.l.nextType();
         // ADD|SUB binaryexpression
         if (nextType.within(Type.PLUS, Type.MINUS)) {
             p.eat(nextType);
-            return new ASTNode<Type>(
+            return new ASTNode<Type, ASTNode<?, ?>>(
                 "BinaryExpression", nextType,
                 temp, BinaryExpression(p)
             );
@@ -32,14 +32,14 @@ public class BinExp {
      * term := exp muldivoperator term
      *       | exp
      */
-    public static AST Term(Parser p) throws ParseException {
-        AST temp = Exp(p);
+    public static ASTNode<?, ?> Term(Parser p) throws ParseException, LexException {
+        ASTNode<?, ?> temp = Exp(p);
 
         Type nextType = p.l.nextType();
         // MUL|DIV term
         if (nextType.within(Type.MUL, Type.DIV)) {
             p.eat(nextType);
-            return new ASTNode<Type>(
+            return new ASTNode<Type, ASTNode<?, ?>>(
                 "Term", nextType,
                 temp, Term(p)
             );
@@ -52,12 +52,12 @@ public class BinExp {
      * exp := factor EXP exp
      *      | factor
      */
-    public static AST Exp(Parser p) throws ParseException {
-        AST temp = Factor(p);
+    public static ASTNode<?, ?> Exp(Parser p) throws ParseException, LexException {
+        ASTNode<?, ?> temp = Factor(p);
 
         if (p.l.nextType() == Type.EXP) {
             p.eat(Type.EXP);
-            return new ASTNode<Type>(
+            return new ASTNode<Type, ASTNode<?, ?>>(
                 "Exp", Type.EXP,
                 temp, Exp(p)
             );
@@ -74,7 +74,7 @@ public class BinExp {
      *         | numberliteral
      *         | LPAREN binaryexpression RPAREN
      */
-    public static AST Factor(Parser p) throws ParseException {
+    public static ASTNode<?, ?> Factor(Parser p) throws ParseException, LexException {
         final String name = "Factor";
 
         Type nextType = p.l.nextType();
@@ -92,7 +92,7 @@ public class BinExp {
             if (preceedingSign == null)
                 return Values.NumberLiteral(p);
             else
-                return new ASTNode<Type>(
+                return new ASTNode<Type, ASTNode<?, ?>>(
                     name, preceedingSign,
                     Values.NumberLiteral(p)
                 );
@@ -103,7 +103,7 @@ public class BinExp {
             if (preceedingSign == null)
                 return Values.Variable(p);
             else
-                return new ASTNode<Type>(
+                return new ASTNode<Type, ASTNode<?, ?>>(
                     name, preceedingSign,
                     Values.Variable(p)
                 );
@@ -111,13 +111,13 @@ public class BinExp {
         // LPAREN binaryexpression RPAREN
         if (nextType == Type.LPAREN) {
             p.eat(Type.LPAREN);
-            AST temp = BinaryExpression(p);
+            ASTNode<?, ?> temp = BinaryExpression(p);
             p.eat(Type.RPAREN);
 
             if (preceedingSign == null)
                 return temp;
             else
-                return new ASTNode<Type>(
+                return new ASTNode<Type, ASTNode<?, ?>>(
                     name, preceedingSign,
                     temp
                 );

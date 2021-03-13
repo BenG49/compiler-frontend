@@ -1,16 +1,29 @@
 package compiler;
 
+import compiler.exception.parse.LexException;
 import compiler.exception.parse.ParseException;
+import compiler.exception.semantics.SemanticException;
 import compiler.lexer.Lexer;
 import compiler.parser.Parser;
+import compiler.semantics.VarSemantics;
 
 public class Main {
     public static void main(String... args) {
         try {
             // testLexer(args[0]);
-            testParser(args[0]);
+            // testParser(args[0]);
+            testSemantic(args[0]);
         } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println("Must give a file path argument!");
+        }
+    }
+
+    public static void testSemantic(String path) {
+        Parser p = new Parser(Reader.readFile(path));
+        try {
+            VarSemantics.check(p.parse());
+        } catch (LexException | ParseException | SemanticException e) {
+            System.out.println(e);
         }
     }
 
@@ -21,7 +34,7 @@ public class Main {
             StringBuilder out = new StringBuilder();
             p.parse().printTree(out, "", "");
             System.out.println(out.toString());
-        } catch (ParseException e) {
+        } catch (LexException | ParseException e) {
             System.out.println(e);
         }
     }
@@ -31,7 +44,7 @@ public class Main {
             Lexer l = new Lexer(Reader.readFile(path));
             while (l.hasNext())
                 System.out.println(l.next());
-        } catch (ParseException e) {
+        } catch (LexException e) {
             System.out.println(e);
         }
     }
