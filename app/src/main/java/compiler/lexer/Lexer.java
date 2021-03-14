@@ -3,7 +3,7 @@ package compiler.lexer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import compiler.exception.parse.ParseException;
+import compiler.exception.parse.LexException;
 import compiler.syntax.Type;
 
 public class Lexer {
@@ -23,7 +23,7 @@ public class Lexer {
     private int line;
     private int index;
 
-    public Lexer(String input) throws ParseException {
+    public Lexer(String input) throws LexException {
         if (input.endsWith("\n"))
             this.input = END.matcher(input);
         else
@@ -32,7 +32,7 @@ public class Lexer {
         nextToken = nextToken();
     }
 
-    public Token next() throws ParseException {
+    public Token next() throws LexException {
         Token out = new Token(nextToken);
         nextToken = nextToken();
         return out;
@@ -42,7 +42,7 @@ public class Lexer {
         return nextToken.type;
     }
 
-    private Token nextToken() throws ParseException {
+    private Token nextToken() throws LexException {
         // Inc line count
         input.usePattern(Type.NEWLINE.getPattern());
         if (input.find()) {

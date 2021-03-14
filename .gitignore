@@ -31,3 +31,4 @@ build
 # Etc
 app/.classpath
 .settings/org.eclipse.buildship.core.prefs
+app/.project

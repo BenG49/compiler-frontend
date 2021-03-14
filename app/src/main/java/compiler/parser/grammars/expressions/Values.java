@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import compiler.Empty;
 import compiler.exception.parse.*;
 import compiler.parser.Parser;
 import compiler.parser.grammars.ast.*;
@@ -13,12 +14,12 @@ public class Values {
     /**
      * vartypeliteral := VAR_TYPES
      */
-    public static ASTValue<Type> VarTypeLiteral(Parser p) throws ParseException {
+    public static ASTNode<Empty, Type> VarTypeLiteral(Parser p) throws ParseException, LexException {
         Type out = p.l.nextType();
         p.eat(Type.getVarTypes());
 
-        return new ASTValue<Type>(
-            "VarTypeLiteral",
+        return new ASTNode<Empty, Type>(
+            "VarTypeLiteral", new Empty(),
             out
         );
     }
@@ -27,15 +28,15 @@ public class Values {
      * returntypeliteral := VAR_TYPES
      *                    | VOID
      */
-    public static ASTValue<Type> ReturnTypeLiteral(Parser p) throws ParseException {
+    public static ASTNode<Empty, Type> ReturnTypeLiteral(Parser p) throws ParseException, LexException {
         Type out = p.l.nextType();
         List<Type> temp = new ArrayList<Type>(Arrays.asList(Type.getVarTypes()));
         temp.add(Type.VOID);
 
         p.eat(temp);
 
-        return new ASTValue<Type>(
-            "ReturnTypeLiteral",
+        return new ASTNode<Empty, Type>(
+            "ReturnTypeLiteral", new Empty(),
             out
         );
     }
@@ -44,12 +45,12 @@ public class Values {
      * truefalseliteral := TRUE
      *                   | FALSE
      */
-    public static ASTValue<Type> TrueFalseLiteral(Parser p) throws ParseException {
+    public static ASTNode<Empty, Type> TrueFalseLiteral(Parser p) throws ParseException, LexException {
         Type out = p.l.nextType();
         p.eat(Type.TRUE, Type.FALSE);
 
-        return new ASTValue<Type>(
-            "TrueFalseLiteral",
+        return new ASTNode<Empty, Type>(
+            "TrueFalseLiteral", new Empty(),
             out
         );
     }
@@ -57,9 +58,9 @@ public class Values {
     /**
      * stringliteral := STR
      */
-    public static ASTValue<String> StringLiteral(Parser p) throws ParseException {
-        return new ASTValue<String>(
-            "StringLiteral",
+    public static ASTNode<Empty, String> StringLiteral(Parser p) throws ParseException, LexException {
+        return new ASTNode<Empty, String>(
+            "StringLiteral", new Empty(),
             p.eat(Type.STR)
         );
     }
@@ -68,7 +69,7 @@ public class Values {
      * numberliteral := intliteral
      *                | floatliteral
      */
-    public static AST NumberLiteral(Parser p) throws ParseException {
+    public static ASTNode<?, ?> NumberLiteral(Parser p) throws ParseException, LexException {
         Type nextType = p.l.nextType();
 
         if (nextType == Type.INT)
@@ -86,9 +87,9 @@ public class Values {
     /**
      * intliteral := INT
      */
-    public static ASTValue<Integer> IntLiteral(Parser p) throws ParseException {
-        return new ASTValue<Integer>(
-            "IntLiteral",
+    public static ASTNode<Empty, Integer> IntLiteral(Parser p) throws ParseException, LexException {
+        return new ASTNode<Empty, Integer>(
+            "IntLiteral", new Empty(),
             Integer.parseInt(p.eat(Type.INT))
         );
     }
@@ -96,9 +97,9 @@ public class Values {
     /**
      * floatliteral := FLOAT
      */
-    public static ASTValue<Float> FloatLiteral(Parser p) throws ParseException {
-        return new ASTValue<Float>(
-            "FloatLiteral",
+    public static ASTNode<Empty, Float> FloatLiteral(Parser p) throws ParseException, LexException {
+        return new ASTNode<Empty, Float>(
+            "FloatLiteral", new Empty(),
             Float.parseFloat(p.eat(Type.FLOAT))
         );
     }
@@ -106,9 +107,9 @@ public class Values {
     /**
      * variable := VAR
      */
-    public static ASTValue<String> Variable(Parser p) throws ParseException {
-        return new ASTValue<String>(
-            "Variable",
+    public static ASTNode<Empty, String> Variable(Parser p) throws ParseException, LexException {
+        return new ASTNode<Empty, String>(
+            "Variable", new Empty(),
             p.eat(Type.VAR)
         );
     }
