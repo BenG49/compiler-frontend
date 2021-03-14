@@ -5,8 +5,10 @@ import compiler.exception.parse.ParseException;
 import compiler.exception.semantics.SemanticException;
 import compiler.lexer.Lexer;
 import compiler.parser.Parser;
+import compiler.parser.grammars.ast.ASTNode;
 import compiler.semantics.VarSemantics;
 
+// TODO: improve lexer position, make it so that semantics can return position
 public class Main {
     public static void main(String... args) {
         try {
@@ -21,7 +23,13 @@ public class Main {
     public static void testSemantic(String path) {
         Parser p = new Parser(Reader.readFile(path));
         try {
-            VarSemantics.check(p.parse());
+            ASTNode<?, ?> program = p.parse();
+            VarSemantics.check(program);
+            
+            System.out.println("Abstract Syntax Tree:\n");
+            StringBuilder out = new StringBuilder();
+            program.printTree(out, "", "");
+            System.out.println(out.toString());
         } catch (LexException | ParseException | SemanticException e) {
             System.out.println(e);
         }

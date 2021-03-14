@@ -13,9 +13,9 @@ public class Expressions {
     /**
      * program := statementlist
      */
-    public static ASTNode<Empty, ASTNode<?, ?>> Program(Parser p) throws ParseException, LexException {
-        return new ASTNode<Empty, ASTNode<?, ?>>(
-            "Program", new Empty(),
+    public static ASTNode<String, ASTNode<?, ?>> Program(Parser p) throws ParseException, LexException {
+        return new ASTNode<String, ASTNode<?, ?>>(
+            "Program", "",
             StatementList(p)
         );
     }
@@ -23,7 +23,7 @@ public class Expressions {
     /**
      * statementlist := statement...
      */
-    public static ASTNode<Empty, ASTNode<?, ?>> StatementList(Parser p) throws ParseException, LexException {
+    public static ASTNode<String, ASTNode<?, ?>> StatementList(Parser p) throws ParseException, LexException {
         List<ASTNode<?, ?>> statements = new ArrayList<ASTNode<?, ?>>();
         while (p.l.hasNext()) {
             ASTNode<?, ?> temp = Statement(p);
@@ -31,8 +31,8 @@ public class Expressions {
                 statements.add(temp);
         }
 
-        return new ASTNode<Empty, ASTNode<?, ?>>(
-            "StatementList", new Empty(),
+        return new ASTNode<String, ASTNode<?, ?>>(
+            "StatementList", "",
             statements
         );
     }
@@ -81,7 +81,7 @@ public class Expressions {
      * functiondeclaration :=     vartypeliteral
      *                          | VOID
      *                       FUNC
-     *                            vartypeliteral variable...
+     *                            declarestatement...
      *                       RPAREN LB blockstatementlist RB
      */
     public static ASTNode<String, ASTNode<?, ?>> FunctionDeclaration(Parser p, Type r) throws ParseException, LexException {
@@ -95,8 +95,13 @@ public class Expressions {
 
         Type nextType = p.l.nextType();
         while (nextType != Type.RPAREN) {
-            out.add(Values.VarTypeLiteral(p));
-            out.add(Values.Variable(p));
+            ASTNode<Empty, Type> type = Values.VarTypeLiteral(p);
+            ASTNode<Empty, String> var = Values.Variable(p);
+            out.add(new ASTNode<Type, ASTNode<?, ?>>(
+                "DeclareStatement", Type.EQUAL,
+                type, var
+            ));
+
             nextType = p.l.nextType();
             if (nextType != Type.RPAREN)
                 p.eat(Type.COMMA);
@@ -242,7 +247,7 @@ public class Expressions {
 
     /**
      * forstatement := FOR LPAREN
-     *                             declareexprression
+     *                             declarestatement
      *                           | ""
      *                         COMMA
      *                             boolexpression
@@ -314,7 +319,12 @@ public class Expressions {
             }
 
             return new ASTNode<Type, ASTNode<?, ?>>(
-                "DeclareExpression", Type.EQUAL,
+                "DeclareStatement", Type.EQUAL,
+                out
+            );
+        } else if (nextType == Type.NEWLINE) {
+            return new ASTNode<Type, ASTNode<?, ?>>(
+                "DeclareStatement", Type.EQUAL,
                 out
             );
         }
@@ -335,7 +345,7 @@ public class Expressions {
         
         
         return new ASTNode<Type, ASTNode<?, ?>>(
-            "DeclareExpression", Type.EQUAL,
+            "DeclareStatement", Type.EQUAL,
             out
         );
     }
