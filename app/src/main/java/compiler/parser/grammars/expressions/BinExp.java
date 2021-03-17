@@ -98,13 +98,13 @@ public class BinExp {
         }
 
         // variable
-        if (nextType == Type.VAR)
+        if (nextType == Type.ID)
             if (preceedingSign == null)
-                return Values.Variable(p, false);
+                return Values.Identifier(p, false);
             else
                 return new ASTNode<Type, ASTNode<?, ?>>(
                     name, preceedingSign,
-                    Values.Variable(p, false)
+                    Values.Identifier(p, false)
                 );
 
         // LPAREN binaryexpression RPAREN

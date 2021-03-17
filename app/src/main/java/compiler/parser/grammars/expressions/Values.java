@@ -6,8 +6,8 @@ import java.util.List;
 
 import compiler.Empty;
 import compiler.exception.parse.*;
-import compiler.exception.semantics.DuplicateVarException;
-import compiler.exception.semantics.UndefinedVarException;
+import compiler.exception.semantics.DuplicateIdException;
+import compiler.exception.semantics.UndefinedIdException;
 import compiler.exception.CompileException;
 import compiler.parser.Parser;
 import compiler.parser.grammars.ast.*;
@@ -108,19 +108,18 @@ public class Values {
     }
 
     /**
-     * variable := VAR
-     * @throws UndefinedVarException
+     * identifier := ID
      */
-    public static ASTNode<Empty, String> Variable(Parser p, boolean define) throws CompileException {
-        String name = p.eat(Type.VAR);
+    public static ASTNode<Empty, String> Identifier(Parser p, boolean define) throws CompileException {
+        String name = p.eat(Type.ID);
 
         if (!define && !p.t.contains(name))
-            throw new UndefinedVarException(p.l.getPos(), name);
+            throw new UndefinedIdException(p.l.getPos(), name);
         
-        if (define && p.t.contains(name))
-            throw new DuplicateVarException(p.l.getPos(), name);
+        if (define && p.t.contains(name) /*&& p.t.get(name).scope == scope*/)
+            throw new DuplicateIdException(p.l.getPos(), name);
 
-        return new ASTNode<Empty, String>("Variable", new Empty(), name);
+        return new ASTNode<Empty, String>("Identifier", new Empty(), name);
     }
 
 }

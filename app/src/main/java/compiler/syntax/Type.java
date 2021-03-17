@@ -54,8 +54,7 @@ public enum Type {
     NEWLINE(p("(\r\n|\r|\n)")),
 
     // TODO: this is horrible, use lookahead instead
-    FUNC(   p("[A-z]+[A-z\\d]*\\s*\\(")),
-    VAR(    p("[A-z]+[A-z\\d]*"));
+    ID(    p("[A-z]+[A-z\\d]*"));
 
     private static final EnumSet<Type> allOf;
 

@@ -77,8 +77,8 @@ public class BoolExp {
             return Values.TrueFalseLiteral(p);
 
         // variable
-        if (nextType == Type.VAR)
-            return Values.Variable(p, false);
+        if (nextType == Type.ID)
+            return Values.Identifier(p, false);
 
         // binaryexpression
         return BinExp.BinaryExpression(p);
