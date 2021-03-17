@@ -12,6 +12,6 @@ public class VarData {
     }
 
     public String toString() {
-        return type+", "+scope;
+        return "("+type+", "+scope+")";
     }
 }

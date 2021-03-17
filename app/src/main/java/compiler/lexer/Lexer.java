@@ -56,12 +56,16 @@ public class Lexer {
     }
 
     public Type nextType(int lookAheadCount) {
+        if (lookAheadCount < 1)
+            return null;
+
         if (tokenCache.size() < lookAheadCount) {
-            for (int i = 0; i < lookAheadCount-tokenCache.size()+1; i++)
+            int max = lookAheadCount-tokenCache.size();
+            for (int i = 0; i < max; i++)
                 tokenCache.add(nextToken(true));
         }
 
-        return tokenCache.get(0).type;
+        return tokenCache.get(lookAheadCount-1).type;
     }
 
     private Token nextToken(boolean cache) {

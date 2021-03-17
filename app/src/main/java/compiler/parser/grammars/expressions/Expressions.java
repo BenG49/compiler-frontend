@@ -57,6 +57,9 @@ public class Expressions {
         // ifstatement
         if (nextType == Type.IF)
             out = IfStatement(p);
+        // functiondeclaration
+        else if ((nextType == Type.VOID || nextType.within(Type.getVarTypes())) && p.l.nextType(3) == Type.LPAREN)
+            out = FunctionDeclaration(p);
         // declarestatement
         else if (nextType.within(Type.getVarTypes()))
             out = DeclareStatement(p);
@@ -67,8 +70,6 @@ public class Expressions {
             out = WhileStatement(p);
         else if (nextType == Type.FOR)
             out = ForStatement(p);
-        else if (nextType == Type.VOID)
-            out = FunctionDeclaration(p, null, null);
         else {
             p.eat(Type.NEWLINE);
             return null;
@@ -86,16 +87,11 @@ public class Expressions {
      *                            declarestatement...
      *                       RPAREN LB blockstatementlist RB
      */
-    public static ASTNode<String, ASTNode<?, ?>> FunctionDeclaration(Parser p, Type r, ASTNode<?, ?> id) throws CompileException {
+    public static ASTNode<String, ASTNode<?, ?>> FunctionDeclaration(Parser p) throws CompileException {
         List<ASTNode<?, ?>> out = new ArrayList<ASTNode<?, ?>>();
 
-        if (r == null && id == null) {
-            out.add(Values.ReturnTypeLiteral(p));
-            out.add(Values.Identifier(p, true));
-        } else {
-            out.add(new ASTNode<Empty, Type>("ReturnTypeLiteral", new Empty(), r));
-            out.add(id);
-        }
+        out.add(Values.ReturnTypeLiteral(p));
+        out.add(Values.Function(p, true));
 
         String name = (String)out.get(1).branches.get(0);
 
@@ -133,7 +129,7 @@ public class Expressions {
      *                     binaryexpression
      *                   | stringliteral
      *                   | truefalseliteral
-     *                   | VAR
+     *                   | ID
      *                 COMMA
      *                 ...
      *                 RPAREN
@@ -146,7 +142,7 @@ public class Expressions {
 
         // TODO: check function type, add functions to vardata
         while (nextType != Type.RPAREN) {
-            // VAR
+            // ID
             if (nextType == Type.ID)
                 out.add(Values.Identifier(p, false));
             // stringliteral
@@ -319,12 +315,9 @@ public class Expressions {
         out.add(Values.VarTypeLiteral(p));
         out.add(Values.Identifier(p, true));
 
-        Type nextType = p.l.nextType();
-        if (nextType == Type.LPAREN)
-            return FunctionDeclaration(p, type, out.get(1));
-
         p.t.put((String)out.get(1).branches.get(0), new VarData(type, ""));
         
+        Type nextType = p.l.nextType();
         if (nextType == Type.COMMA) {
             while (nextType != Type.NEWLINE) {
                 p.eat(Type.COMMA);

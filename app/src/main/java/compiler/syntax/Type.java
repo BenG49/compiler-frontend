@@ -53,13 +53,17 @@ public enum Type {
 
     NEWLINE(p("(\r\n|\r|\n)")),
 
-    // TODO: this is horrible, use lookahead instead
-    ID(    p("[A-z]+[A-z\\d]*"));
+    ID(     p("[A-z]+[A-z\\d]*")),
+
+    // parsing types (do not match to anything)
+    FUNC(p("a^"));
 
     private static final EnumSet<Type> allOf;
 
     static {
         allOf = EnumSet.allOf(Type.class);
+
+        allOf.remove(Type.FUNC);
     }
 
     private Pattern regex;

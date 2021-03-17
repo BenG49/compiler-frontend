@@ -4,7 +4,6 @@ import compiler.exception.CompileException;
 import compiler.lexer.Lexer;
 import compiler.parser.Parser;
 
-// TODO: improve lexer position, make it so that semantics can return position
 public class Main {
     public static void main(String... args) {
         try {
@@ -23,7 +22,7 @@ public class Main {
             p.parse().printTree(out, "", "");
             System.out.println(out.toString());
         } catch (CompileException e) {
-            System.out.println(e);
+            e.printStackTrace();
         }
     }
 
