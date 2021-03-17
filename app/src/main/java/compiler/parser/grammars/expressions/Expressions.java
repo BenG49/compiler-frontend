@@ -63,11 +63,18 @@ public class Expressions {
         // declarestatement
         else if (nextType.within(Type.getVarTypes()))
             out = DeclareStatement(p);
-        // assignstatement
-        else if (nextType == Type.ID)
-            out = AssignStatement(p);
+        else if (nextType == Type.ID) {
+            if (p.l.nextType(2) == Type.LPAREN)
+                // functioncall
+                out = FunctionCall(p);
+            else
+                // assignstatement
+                out = AssignStatement(p);
+        }
+        // whilestatement
         else if (nextType == Type.WHILE)
             out = WhileStatement(p);
+        // forstatement
         else if (nextType == Type.FOR)
             out = ForStatement(p);
         else {
@@ -344,14 +351,14 @@ public class Expressions {
         nextType = p.l.nextType();
         // stringliteral
         if (nextType == Type.STR) {
-            if (nextType == type)
+            if (type.equals(Type.STR_ID))
                 out.add(Values.StringLiteral(p));
             else
                 throw new InvalidTypeException(p.l.getPos(), Type.STR, type);
         }
         // truefalseliteral
         else if (nextType.within(Type.TRUE, Type.FALSE)) {
-            if (nextType == type)
+            if (type == Type.BOOL_ID)
                 out.add(Values.TrueFalseLiteral(p));
             else
                 throw new InvalidTypeException(p.l.getPos(), nextType, type);

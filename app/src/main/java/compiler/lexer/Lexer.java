@@ -40,11 +40,10 @@ public class Lexer {
 
     public Token next() {
         if (tokenCache.size() > 0) {
-            Token out = tokenCache.get(0);
+            Token out = tokenCache.remove(0);
             line = posCache.get(0).get(0);
             index = posCache.get(0).get(1);
 
-            tokenCache.remove(0);
             posCache.remove(0);
             return out;
         } else
@@ -68,33 +67,38 @@ public class Lexer {
         return tokenCache.get(lookAheadCount-1).type;
     }
 
+    // NOTE: line count can be incremented multiple times per next
     private Token nextToken(boolean cache) {
+        int lineOut = line;
+        int indexOut = index;
+
         // Inc line count
         input.usePattern(Type.NEWLINE.getPattern());
         if (input.find()) {
-            index(line+1, 0, cache);
+            index(1, null, cache);
             return new Token(Type.NEWLINE);
         }
 
         // Skip spaces
         input.usePattern(SPACE);
         if (input.find())
-            index(line, index+1, cache);
+            indexOut++;
 
         // Comments
         input.usePattern(Type.LINECOMMENT.getPattern());
         if (input.find())
-            index(line+1, index, cache);
+            lineOut++;
 
         input.usePattern(Type.BLOCKCOMMENT.getPattern());
         if (input.find())
-            index(line+newLineCount(input.group()), index, cache);
+            lineOut += newLineCount(input.group());
         
         for (Type t : Type.getAllOf()) {
             input.usePattern(t.getPattern());
             if (input.find()) {
                 String group = input.group();
-                index(line, index+group.length(), cache);
+                indexOut += group.length();
+                index(lineOut-line, indexOut-index, cache);
                 return new Token(t, group);
             }
         }
@@ -123,12 +127,19 @@ public class Lexer {
         return out;
     }
     
-    private void index(int line, int index, boolean cache) {
-        if (cache)
-            posCache.add(new ArrayList<Integer>(Arrays.asList(line, index)));
-        else {
-            this.line = line;
-            this.index = index;
+    private void index(Integer lineOffset, Integer indexOffset, boolean cache) {
+        if (cache) {
+            int line1 = (posCache.size() == 0) ? line : posCache.get(posCache.size()-1).get(0);
+            int index1 = (posCache.size() == 0) ? line : posCache.get(posCache.size()-1).get(1);
+
+            int lineOut = (lineOffset == null) ? 0 : line1+lineOffset;
+            int indexOut = (indexOffset == null) ? 0 : index1+indexOffset;
+
+            System.out.println(lineOffset+", "+indexOffset);
+            posCache.add(new ArrayList<Integer>(Arrays.asList(lineOut, indexOut)));
+        } else {
+            line = (lineOffset == null) ? 0 : line+lineOffset;
+            index = (indexOffset == null) ? 0 : index+indexOffset;
         }
     }
 
