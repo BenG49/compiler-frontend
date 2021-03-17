@@ -6,55 +6,55 @@ import java.util.regex.Pattern;
 public enum Type {
     // https://regexr.com
 
-    BLOCKCOMMENT(p("\\G\\/\\*(\\*(?!\\/)|[^*])*\\*\\/")),
-    LINECOMMENT(p("\\G\\/\\/.*+\n")),
+    BLOCKCOMMENT(p("\\/\\*(\\*(?!\\/)|[^*])*\\*\\/")),
+    LINECOMMENT(p("\\/\\/.*+\n")),
 
-    FLOAT(  p("\\G\\d+\\.\\d+")),
-    INT(    p("\\G\\d+")),
+    FLOAT(  p("\\d+\\.\\d+")),
+    INT(    p("\\d+")),
     // https://stackoverflow.com/questions/171480/regex-grabbing-values-between-quotation-marks
-    STR(    p("\\G\"(.*?)\"")),
+    STR(    p("\"(.*?)\"")),
 
-    EQUIVALENT( p("\\G(==)")),
-    LESS_EQUAL( p("\\G(<=)")),
-    GREATER_EQUAL(  p("\\G(>=)")),
-    LESS(   p("\\G<")),
-    GREATER(p("\\G>")),
+    EQUIVALENT( p("(==)")),
+    LESS_EQUAL( p("(<=)")),
+    GREATER_EQUAL(  p("(>=)")),
+    LESS(   p("<")),
+    GREATER(p(">")),
     // if (a =| 1, 3, 5) -> if a is equal to 1, 3, or 5
-    OR(     p("\\G(\\|\\|)")),
-    AND(    p("\\G(\\&\\&)")),
-    NOT(    p("\\G!")),
+    OR(     p("(\\|\\|)")),
+    AND(    p("(\\&\\&)")),
+    NOT(    p("!")),
 
-    EXP(    p("\\G(\\*\\*)")),
-    EQUAL(  p("\\G=")),
-    MUL(    p("\\G\\*")),
-    DIV(    p("\\G/")),
-    PLUS(   p("\\G\\+")),
-    MINUS(  p("\\G\\-")),
+    EXP(    p("(\\*\\*)")),
+    EQUAL(  p("=")),
+    MUL(    p("\\*")),
+    DIV(    p("/")),
+    PLUS(   p("\\+")),
+    MINUS(  p("\\-")),
 
-    LPAREN( p("\\G\\(")),
-    RPAREN( p("\\G\\)")),
-    LB(     p("\\G\\{")),
-    RB(     p("\\G\\}")),
-    COMMA(  p("\\G,")),
+    LPAREN( p("\\(")),
+    RPAREN( p("\\)")),
+    LB(     p("\\{")),
+    RB(     p("\\}")),
+    COMMA(  p(",")),
     
     // reserved words
-    INT_ID( p("\\G(int)")),
-    FLOAT_ID(p("\\G(float)")),
-    STR_ID( p("\\G(str)")),
-    BOOL_ID(p("\\G(bool)")),
-    IF(     p("\\G(if)")),
-    ELSE(   p("\\G(else)")),
-    TRUE(   p("\\G(true)")),
-    FALSE(  p("\\G(false)")),
-    WHILE(  p("\\G(while)")),
-    FOR(    p("\\G(for)")),
-    VOID(   p("\\G(void)")),
-    RETURN( p("\\G(return)")),
+    INT_ID( p("(int)")),
+    FLOAT_ID(p("(float)")),
+    STR_ID( p("(str)")),
+    BOOL_ID(p("(bool)")),
+    IF(     p("(if)")),
+    ELSE(   p("(else)")),
+    TRUE(   p("(true)")),
+    FALSE(  p("(false)")),
+    WHILE(  p("(while)")),
+    FOR(    p("(for)")),
+    VOID(   p("(void)")),
+    RETURN( p("(return)")),
 
-    NEWLINE(p("\\G(\r\n|\r|\n)")),
+    NEWLINE(p("(\r\n|\r|\n)")),
 
-    FUNC(   p("\\G[A-z]+[A-z\\d]*\\s*\\(")),
-    VAR(    p("\\G[A-z]+[A-z\\d]*"));
+    FUNC(   p("[A-z]+[A-z\\d]*\\s*\\(")),
+    VAR(    p("[A-z]+[A-z\\d]*"));
 
     private static final EnumSet<Type> allOf;
 
@@ -90,6 +90,6 @@ public enum Type {
     }
 
     private static Pattern p(String s) {
-        return Pattern.compile(s);
+        return Pattern.compile("\\G"+s);
     }
 }

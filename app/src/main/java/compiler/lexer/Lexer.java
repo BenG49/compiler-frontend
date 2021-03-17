@@ -58,9 +58,11 @@ public class Lexer {
 
         // Comments
         input.usePattern(Type.LINECOMMENT.getPattern());
-        input.find();
+        if (input.find())
+            line++;
         input.usePattern(Type.BLOCKCOMMENT.getPattern());
-        input.find();
+        if (input.find())
+            line += newLineCount(input.group());
         
         for (Type t : Type.getAllOf()) {
             input.usePattern(t.getPattern());
@@ -81,5 +83,16 @@ public class Lexer {
 
     public int[] getPos() {
         return new int[] {line+1, index};
+    }
+    
+    private int newLineCount(String comment) {
+        int out = 0;
+
+        for (int i = 0; i < comment.length(); i++) {
+            if (comment.charAt(i) == '\n')
+                out++;
+        }
+
+        return out;
     }
 }
