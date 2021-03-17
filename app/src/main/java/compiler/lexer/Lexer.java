@@ -40,12 +40,12 @@ public class Lexer {
 
     public Token next() {
         if (tokenCache.size() > 0) {
-            Token out = tokenCache.get(tokenCache.size()-1);
-            line = posCache.get(posCache.size()-1).get(0);
-            index = posCache.get(posCache.size()-1).get(1);
+            Token out = tokenCache.get(0);
+            line = posCache.get(0).get(0);
+            index = posCache.get(0).get(1);
 
-            tokenCache.remove(tokenCache.size()-1);
-            posCache.remove(posCache.size()-1);
+            tokenCache.remove(0);
+            posCache.remove(0);
             return out;
         } else
             return nextToken(false);
