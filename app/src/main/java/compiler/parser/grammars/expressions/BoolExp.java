@@ -1,7 +1,6 @@
 package compiler.parser.grammars.expressions;
 
-import compiler.exception.parse.LexException;
-import compiler.exception.parse.ParseException;
+import compiler.exception.CompileException;
 import compiler.parser.Parser;
 import compiler.parser.grammars.ast.ASTNode;
 import compiler.syntax.Type;
@@ -11,7 +10,7 @@ public class BoolExp {
      * boolexpression := boolterm andoroperator boolexpression
      *                 | boolterm
      */
-    public static ASTNode<?, ?> BoolExpression(Parser p) throws ParseException, LexException {
+    public static ASTNode<?, ?> BoolExpression(Parser p) throws CompileException {
         ASTNode<?, ?> temp = BoolTerm(p);
 
         Type nextType = p.l.nextType();
@@ -30,7 +29,7 @@ public class BoolExp {
      * boolterm := boolfactor compareoperator boolterm
      *           | boolfactor
      */
-    public static ASTNode<?, ?> BoolTerm(Parser p) throws ParseException, LexException {
+    public static ASTNode<?, ?> BoolTerm(Parser p) throws CompileException {
         ASTNode<?, ?> temp = BoolFactor(p);
 
         Type nextType = p.l.nextType();
@@ -52,7 +51,7 @@ public class BoolExp {
      *             | truefalseliteral
      *             | variable
      */
-    public static ASTNode<?, ?> BoolFactor(Parser p) throws ParseException, LexException {
+    public static ASTNode<?, ?> BoolFactor(Parser p) throws CompileException {
         final String name = "BoolFactor";
         Type nextType = p.l.nextType();
 
@@ -79,7 +78,7 @@ public class BoolExp {
 
         // variable
         if (nextType == Type.VAR)
-            return Values.Variable(p);
+            return Values.Variable(p, false);
 
         // binaryexpression
         return BinExp.BinaryExpression(p);

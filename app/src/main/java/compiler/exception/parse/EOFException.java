@@ -1,6 +1,8 @@
 package compiler.exception.parse;
 
-public class EOFException extends ParseException{
+import compiler.exception.CompileException;
+
+public class EOFException extends CompileException {
 
     private static final long serialVersionUID = 1L;
 

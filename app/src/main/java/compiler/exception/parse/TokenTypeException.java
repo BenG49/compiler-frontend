@@ -1,8 +1,9 @@
 package compiler.exception.parse;
 
+import compiler.exception.CompileException;
 import compiler.syntax.Type;
 
-public class TokenTypeException extends ParseException {
+public class TokenTypeException extends CompileException {
 
     private static final long serialVersionUID = 1L;
 

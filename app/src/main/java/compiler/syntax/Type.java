@@ -6,8 +6,8 @@ import java.util.regex.Pattern;
 public enum Type {
     // https://regexr.com
 
-    BLOCKCOMMENT(p("\\/\\*(\\*(?!\\/)|[^*])*\\*\\/")),
-    LINECOMMENT(p("\\/\\/.*+\n")),
+    BLOCKCOMMENT(p("\\/\\*(\\*(?!\\/)|[^*])*\\*\\/(\r\n|\r|\n)*")),
+    LINECOMMENT(p("\\/\\/.*+(\r\n|\r|\n)")),
 
     FLOAT(  p("\\d+\\.\\d+")),
     INT(    p("\\d+")),
@@ -53,6 +53,7 @@ public enum Type {
 
     NEWLINE(p("(\r\n|\r|\n)")),
 
+    // TODO: this is horrible, use lookahead instead
     FUNC(   p("[A-z]+[A-z\\d]*\\s*\\(")),
     VAR(    p("[A-z]+[A-z\\d]*"));
 

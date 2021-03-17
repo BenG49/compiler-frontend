@@ -1,8 +1,7 @@
 package compiler.parser.grammars.expressions;
 
-import compiler.exception.parse.LexException;
-import compiler.exception.parse.ParseException;
 import compiler.exception.parse.TokenTypeException;
+import compiler.exception.CompileException;
 import compiler.parser.Parser;
 import compiler.parser.grammars.ast.ASTNode;
 import compiler.syntax.Type;
@@ -12,7 +11,7 @@ public class BinExp {
      * binaryexpression := term addsuboperator binaryexpression
      *                   | term
      */
-    public static ASTNode<?, ?> BinaryExpression(Parser p) throws ParseException, LexException {
+    public static ASTNode<?, ?> BinaryExpression(Parser p) throws CompileException {
         ASTNode<?, ?> temp = Term(p);
 
         Type nextType = p.l.nextType();
@@ -32,7 +31,7 @@ public class BinExp {
      * term := exp muldivoperator term
      *       | exp
      */
-    public static ASTNode<?, ?> Term(Parser p) throws ParseException, LexException {
+    public static ASTNode<?, ?> Term(Parser p) throws CompileException {
         ASTNode<?, ?> temp = Exp(p);
 
         Type nextType = p.l.nextType();
@@ -52,7 +51,7 @@ public class BinExp {
      * exp := factor EXP exp
      *      | factor
      */
-    public static ASTNode<?, ?> Exp(Parser p) throws ParseException, LexException {
+    public static ASTNode<?, ?> Exp(Parser p) throws CompileException {
         ASTNode<?, ?> temp = Factor(p);
 
         if (p.l.nextType() == Type.EXP) {
@@ -74,7 +73,7 @@ public class BinExp {
      *         | numberliteral
      *         | LPAREN binaryexpression RPAREN
      */
-    public static ASTNode<?, ?> Factor(Parser p) throws ParseException, LexException {
+    public static ASTNode<?, ?> Factor(Parser p) throws CompileException {
         final String name = "Factor";
 
         Type nextType = p.l.nextType();
@@ -101,11 +100,11 @@ public class BinExp {
         // variable
         if (nextType == Type.VAR)
             if (preceedingSign == null)
-                return Values.Variable(p);
+                return Values.Variable(p, false);
             else
                 return new ASTNode<Type, ASTNode<?, ?>>(
                     name, preceedingSign,
-                    Values.Variable(p)
+                    Values.Variable(p, false)
                 );
 
         // LPAREN binaryexpression RPAREN
