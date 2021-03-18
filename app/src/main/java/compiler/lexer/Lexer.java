@@ -135,7 +135,6 @@ public class Lexer {
             int lineOut = (lineOffset == null) ? 0 : line1+lineOffset;
             int indexOut = (indexOffset == null) ? 0 : index1+indexOffset;
 
-            System.out.println(lineOffset+", "+indexOffset);
             posCache.add(new ArrayList<Integer>(Arrays.asList(lineOut, indexOut)));
         } else {
             line = (lineOffset == null) ? 0 : line+lineOffset;

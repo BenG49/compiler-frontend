@@ -78,7 +78,7 @@ public class BoolExp {
 
         // variable
         if (nextType == Type.ID)
-            return Values.Identifier(p, false);
+            return Values.Variable(p);
 
         // binaryexpression
         return BinExp.BinaryExpression(p);

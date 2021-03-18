@@ -11,6 +11,7 @@ import compiler.exception.semantics.UndefinedIdException;
 import compiler.exception.CompileException;
 import compiler.parser.Parser;
 import compiler.parser.grammars.ast.*;
+import compiler.semantics.VarData;
 import compiler.syntax.Type;
 
 public class Values {
@@ -110,16 +111,22 @@ public class Values {
     /**
      * identifier := ID
      */
-    public static ASTNode<Empty, String> Identifier(Parser p, boolean define) throws CompileException {
+    public static ASTNode<Empty, String> Variable(Parser p) throws CompileException {
+        return Variable(p, null);
+    }
+    public static ASTNode<Empty, String> Variable(Parser p, Type define) throws CompileException {
         String name = p.eat(Type.ID);
         boolean contains = p.t.contains(name);
 
-        if (!define && (!contains || contains && !p.t.get(name).type.within(Type.getVarTypes())))
+        if (define == null && (!contains || contains && p.t.get(name).function))
             throw new UndefinedIdException(p.l.getPos(), name);
         
         // special case, functions and vars can have the same name
-        if (define && contains && p.t.get(name).type != Type.FUNC /*&& p.t.get(name).scope == scope*/)
+        if (define != null && contains && !p.t.get(name).function /*&& p.t.get(name).scope == scope*/)
             throw new DuplicateIdException(p.l.getPos(), name);
+        
+        if (define != null)
+            p.t.put(name, new VarData(define, "", false));
 
         return new ASTNode<Empty, String>("Identifier", new Empty(), name);
     }
@@ -127,16 +134,22 @@ public class Values {
     /**
      * function := FUNC
      */
-    public static ASTNode<Empty, String> Function(Parser p, boolean define) throws CompileException {
+    public static ASTNode<Empty, String> Function(Parser p) throws CompileException {
+        return Function(p, null);
+    }
+    public static ASTNode<Empty, String> Function(Parser p, Type define) throws CompileException {
         String name = p.eat(Type.ID);
         boolean contains = p.t.contains(name);
 
-        if (!define && (!contains || contains && p.t.get(name).type != Type.FUNC))
+        if (define == null && (!contains || contains && !p.t.get(name).function))
             throw new UndefinedIdException(p.l.getPos(), name);
         
         // special case, functions and vars can have the same name
-        if (define && contains && !p.t.get(name).type.within(Type.getVarTypes()) /*&& p.t.get(name).scope == scope*/)
+        if (define != null && contains && p.t.get(name).function /*&& p.t.get(name).scope == scope*/)
             throw new DuplicateIdException(p.l.getPos(), name);
+        
+        if (define != null)
+            p.t.put(name, new VarData(define, "", true));
         
         return new ASTNode<Empty, String>("Function", new Empty(), name);
     }

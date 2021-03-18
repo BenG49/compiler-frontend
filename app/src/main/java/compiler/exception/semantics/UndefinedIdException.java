@@ -11,7 +11,7 @@ public class UndefinedIdException extends CompileException {
         StringBuilder sb = new StringBuilder();
         sb.append("Undefined identifier \"");
         sb.append(given);
-        sb.append("\" at line");
+        sb.append("\" at line ");
         sb.append(pos[0]);
         sb.append(", index ");
         sb.append(pos[1]);
