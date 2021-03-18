@@ -7,6 +7,7 @@ import compiler.parser.grammars.ast.ASTNode;
 import compiler.syntax.SymbolTable;
 import compiler.syntax.Type;
 
+// TODO: add type casting and make it so you can't assign float to int
 public class BinExp {
     /**
      * binaryexpression := term addsuboperator binaryexpression

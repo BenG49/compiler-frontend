@@ -2,19 +2,20 @@ package compiler.syntax;
 
 import java.util.HashMap;
 
+import compiler.semantics.FuncData;
 import compiler.semantics.VarData;
 
 public class SymbolTable {
     private HashMap<String, VarData> vars;
-    private HashMap<String, VarData> funcs;
+    private HashMap<String, FuncData> funcs;
 
     public SymbolTable() {
         vars = new HashMap<String, VarData>();
-        funcs = new HashMap<String, VarData>();
+        funcs = new HashMap<String, FuncData>();
     }
     public SymbolTable(SymbolTable copy) {
         this.vars = new HashMap<String, VarData>(copy.vars);
-        this.funcs = new HashMap<String, VarData>(copy.funcs);
+        this.funcs = new HashMap<String, FuncData>(copy.funcs);
     }
 
     public boolean vcontains(String var) {
@@ -34,11 +35,11 @@ public class SymbolTable {
         return funcs.keySet().contains(func);
     }
     
-    public void fput(String func, VarData data) {
+    public void fput(String func, FuncData data) {
         funcs.put(func, data);
     }
 
-    public VarData fget(String var) {
+    public FuncData fget(String var) {
         return funcs.get(var);
     }
 }

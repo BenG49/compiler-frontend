@@ -1,5 +1,6 @@
 package compiler.parser;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import compiler.exception.CompileException;
@@ -13,7 +14,6 @@ import compiler.parser.grammars.expressions.Expressions;
 public class Parser {
     public String s;
     public Lexer l;
-    public SymbolTable t;
 
     public Parser(String s) {
         this.s = s;
@@ -21,9 +21,17 @@ public class Parser {
 
     public ASTNode<?, ?> parse() throws CompileException {
         l = new Lexer(s);
-        t = new SymbolTable();
 
-        return Expressions.Program(this, t);
+        return Expressions.Program(this, new SymbolTable());
+    }
+
+    public List<String> eatMultiple(Type... type) throws CompileException {
+        List<String> out = new ArrayList<String>();
+
+        for (Type t:type)
+            out.add(eat(t));
+        
+        return out;
     }
 
     public String eat(List<Type> type) throws CompileException {

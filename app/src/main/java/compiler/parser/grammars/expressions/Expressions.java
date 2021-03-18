@@ -5,6 +5,7 @@ import java.util.List;
 
 import compiler.Empty;
 import compiler.exception.semantics.InvalidTypeException;
+import compiler.exception.semantics.MismatchedArgCountException;
 import compiler.exception.semantics.ReturnArgCountException;
 import compiler.exception.CompileException;
 import compiler.syntax.SymbolTable;
@@ -120,8 +121,7 @@ public class Expressions {
                 p.eat(Type.COMMA);
         }
         
-        p.eat(Type.RPAREN);
-        p.eat(Type.LB);
+        p.eatMultiple(Type.RPAREN, Type.LB);
         // TODO: add support for returning tuples
         out.add(BlockStatementList(p, innerScope, new Type[] {(Type)out.get(0).branches.get(0)}));
         p.eat(Type.RB);
@@ -146,23 +146,15 @@ public class Expressions {
         List<ASTNode<?, ?>> out = new ArrayList<ASTNode<?, ?>>();
         out.add(Values.Function(p, t));
         p.eat(Type.LPAREN);
+
         Type nextType = p.l.nextType();
+        String name = (String)out.get(0).branches.get(0);
+        int argCount = t.fget(name).args.size();
 
         // TODO: check function type, add functions to vardata
-        while (nextType != Type.RPAREN) {
-            // variable
-            if (nextType == Type.ID)
-                out.add(Values.Variable(p, t));
-            // stringliteral
-            else if (nextType == Type.STR)
-                out.add(Values.StringLiteral(p));
-            // truefalseliteral
-            else if (nextType.within(Type.TRUE, Type.FALSE))
-                out.add(Values.TrueFalseLiteral(p));
-            // binaryexpression
-            else
-                out.add(BinExp.BinaryExpression(p, t));
-            
+        for (int i = 0; i < argCount; i++) {
+            out.add(VarAssignment(p, t, t.fget(name).args.get(i)));
+
             nextType = p.l.nextType();
             if (nextType == Type.COMMA)
                 p.eat(Type.COMMA);
@@ -217,7 +209,7 @@ public class Expressions {
         p.eat(Type.RETURN);
 
         Type nextType = p.l.nextType();
-        for (int var = 1; nextType != Type.NEWLINE; var++) {
+        for (int var = 1; var <= returnType.length; var++) {
             if (var > returnType.length)
                 throw new ReturnArgCountException(p.l.getPos(), returnType.length, var);
 
@@ -236,7 +228,12 @@ public class Expressions {
                 ASTNode<?, ?> temp;
                 if (p.l.nextType(2) == Type.LPAREN) {
                     temp = FunctionCall(p, t);
-                    returned = t.fget((String)((ASTNode<?, ?>)temp.branches.get(0)).branches.get(0)).type;
+                    // TODO: did not test this, not sure if it worked or not
+                    List<Type> returnTypes = t.fget((String)((ASTNode<?, ?>)temp.branches.get(0)).branches.get(0)).type;
+                    if (returnTypes.size() == 1)
+                        returned = returnTypes.get(0);
+                    else
+                        throw new MismatchedArgCountException(p.l.getPos(), returnType.length, returnTypes.size()+var);
                 } else {
                     temp = Values.Variable(p, t);
                     returned = t.vget((String)temp.branches.get(0)).type;
@@ -346,18 +343,16 @@ public class Expressions {
      */
     public static ASTNode<?, ?> DeclareStatement(Parser p, SymbolTable t) throws CompileException {
         List<ASTNode<?, ?>> out = new ArrayList<ASTNode<?, ?>>();
-        Type type = p.l.nextType();
+        Type varType = p.l.nextType();
         // type
         out.add(Values.VarTypeLiteral(p));
-        out.add(Values.Variable(p, t, type));
-
-        String name = (String)out.get(1).branches.get(0);
+        out.add(Values.Variable(p, t, varType));
 
         Type nextType = p.l.nextType();
         if (nextType == Type.COMMA) {
             while (nextType != Type.NEWLINE) {
                 p.eat(Type.COMMA);
-                out.add(Values.Variable(p, t, type));
+                out.add(Values.Variable(p, t, varType));
                 nextType = p.l.nextType();
             }
 
@@ -372,39 +367,7 @@ public class Expressions {
         // EQUALS
         p.eat(Type.EQUAL);
         
-        nextType = p.l.nextType();
-        // stringliteral
-        if (nextType == Type.STR) {
-            if (type.equals(Type.STR_ID))
-                out.add(Values.StringLiteral(p));
-            else
-                throw new InvalidTypeException(p.l.getPos(), Type.STR, type);
-        }
-        // truefalseliteral
-        else if (nextType.within(Type.TRUE, Type.FALSE)) {
-            if (type == Type.BOOL_ID)
-                out.add(Values.TrueFalseLiteral(p));
-            else
-                throw new InvalidTypeException(p.l.getPos(), nextType, type);
-        } else if (nextType == Type.ID) {
-            ASTNode<?, ?> temp;
-            String assignment;
-            if (p.l.nextType(2) == Type.LPAREN) {
-                temp = FunctionCall(p, t);
-                assignment = (String)((ASTNode<?, ?>)temp.branches.get(0)).branches.get(0);
-            } else {
-                temp = Values.Variable(p, t);
-                assignment = (String)temp.branches.get(0);
-            }
-
-            if (t.vget(name).type != t.vget(assignment).type)
-                throw new InvalidTypeException(p.l.getPos(), t.vget(assignment).type, t.vget(name).type);
-            
-            out.add(temp);
-        // binaryexpression
-        } else
-            out.add(BinExp.BinaryExpression(p, t));
-        
+        out.add(VarAssignment(p, t, varType));
         
         return new ASTNode<Type, ASTNode<?, ?>>(
             "DeclareStatement", Type.EQUAL,
@@ -414,54 +377,25 @@ public class Expressions {
 
     /**
      * assignstatement := variable
-     *                        EQUALS 
-     *                            binaryexpression
-     *                          | stringliteral
-     *                          | truefalseliteral
-     *                          | variable
-     *                          | functioncall
-     *                   | assignoperator
-     *                        ""
-     *                      | binaryexpression
+     *                        EQUALS varassignment
+     *                       | assignoperator
+     *                            ""
+     *                          | binaryexpression
      */
     public static ASTNode<Type, ASTNode<?, ?>> AssignStatement(Parser p, SymbolTable t) throws CompileException {
         List<ASTNode<?, ?>> out = new ArrayList<ASTNode<?, ?>>();
         // variable
         out.add(Values.Variable(p, t));
 
+        Type varType = t.vget((String)out.get(0).branches.get(0)).type;
         Type nextType = p.l.nextType();
         // EQUALS
         if (nextType == Type.EQUAL) {
             p.eat(Type.EQUAL);
 
-            nextType = p.l.nextType();
-            // stringliteral
-            if (nextType == Type.STR)
-                out.add(Values.StringLiteral(p));
-            // truefalseliteal
-            else if (nextType.within(Type.TRUE, Type.FALSE))
-                out.add(Values.TrueFalseLiteral(p));
-            else if (nextType == Type.ID) {
-                ASTNode<?, ?> temp;
-                String assignment;
-                if (p.l.nextType(2) == Type.LPAREN) {
-                    temp = FunctionCall(p, t);
-                    assignment = (String)((ASTNode<?, ?>)temp.branches.get(0)).branches.get(0);
-                } else {
-                    temp = Values.Variable(p, t);
-                    assignment = (String)temp.branches.get(0);
-                }
-
-                String varName = (String)out.get(0).branches.get(0);
-                if (t.vget(varName).type != t.vget(assignment).type)
-                    throw new InvalidTypeException(p.l.getPos(), t.vget(assignment).type, t.vget(varName).type);
-                
-                out.add(temp);
-                
-            } else
-            // binaryexpression
-                out.add(BinExp.BinaryExpression(p, t));
-        } else {
+            out.add(VarAssignment(p, t, varType));
+        // TODO: add string addition
+        } else if (varType.within(Type.FLOAT_ID, Type.INT_ID)) {
             Type[] temp = Operators.AssignOperator(p);
             // temp list to add to manual addition node
             List<ASTNode<?, ?>> addNode = new ArrayList<ASTNode<?, ?>>();
@@ -488,21 +422,54 @@ public class Expressions {
     }
 
     /**
+     * varassignment := variable
+     *                | function
+     *                | stringliteral
+     *                | truefalseliteral
+     *                | binaryexpression
+     */
+    public static ASTNode<?, ?> VarAssignment(Parser p, SymbolTable t, Type varType) throws CompileException {
+        if (p.l.nextType() == Type.ID) {
+            ASTNode<?, ?> temp;
+            String assignment;
+            if (p.l.nextType(2) == Type.LPAREN) {
+                temp = FunctionCall(p, t);
+                assignment = (String)((ASTNode<?, ?>)temp.branches.get(0)).branches.get(0);
+            } else {
+                temp = Values.Variable(p, t);
+                assignment = (String)temp.branches.get(0);
+            }
+
+            if (varType != t.vget(assignment).type)
+                throw new InvalidTypeException(p.l.getPos(), t.vget(assignment).type, varType);
+            
+            return temp;
+        }
+
+        // stringliteral
+        else if (varType == Type.STR_ID)
+            return Values.StringLiteral(p);
+        // truefalseliteal
+        else if (varType == Type.BOOL_ID)
+            return Values.TrueFalseLiteral(p);
+        else if (varType.within(Type.INT_ID, Type.FLOAT_ID))
+            return BinExp.BinaryExpression(p, t);
+        else
+            throw new InvalidTypeException(p.l.getPos(), p.l.nextType(), varType);
+    }
+
+    /**
      * ifstatement := IF LPAREN boolexpression RPAREN LB blockstatementlist RB
      *                    ""
      *                  | ELSE LB blockstatementlist RB
      *                  | ELSE ifstatement
      */
     public static ASTNode<Type, ASTNode<?, ?>> IfStatement(Parser p, SymbolTable t) throws CompileException {
-        final String name = "IfStatement";
         List<ASTNode<?, ?>> out = new ArrayList<ASTNode<?, ?>>();
 
-        p.eat(Type.IF);
-        p.eat(Type.LPAREN);
+        p.eatMultiple(Type.IF, Type.LPAREN);
         out.add(BoolExp.BoolExpression(p, t));
-        p.eat(Type.RPAREN);
-
-        p.eat(Type.LB);
+        p.eatMultiple(Type.RPAREN, Type.LB);
         out.add(BlockStatementList(p, new SymbolTable(t), null));
         p.eat(Type.RB);
         
@@ -524,7 +491,7 @@ public class Expressions {
         }
         
         return new ASTNode<Type, ASTNode<?, ?>>(
-            name, Type.IF,
+            "IfStatement", Type.IF,
             out
         );
     }

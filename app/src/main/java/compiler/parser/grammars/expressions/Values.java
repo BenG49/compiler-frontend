@@ -11,6 +11,7 @@ import compiler.exception.semantics.UnknownIDException;
 import compiler.exception.CompileException;
 import compiler.parser.Parser;
 import compiler.parser.grammars.ast.*;
+import compiler.semantics.FuncData;
 import compiler.semantics.VarData;
 import compiler.syntax.SymbolTable;
 import compiler.syntax.Type;
@@ -136,20 +137,29 @@ public class Values {
      * function := FUNC
      */
     public static ASTNode<Empty, String> Function(Parser p, SymbolTable scopeTable) throws CompileException {
-        return Function(p, scopeTable, null);
-    }
-    public static ASTNode<Empty, String> Function(Parser p, SymbolTable scopeTable, Type define) throws CompileException {
         String name = p.eat(Type.ID);
-        boolean contains = scopeTable.fcontains(name);
-
-        if (define == null && !contains)
+        if (!scopeTable.fcontains(name))
             throw new UnknownIDException(p.l.getPos(), name);
-        
-        if (define != null && contains/*&& p.t.get(name).scope == scope*/)
+
+        return new ASTNode<Empty, String>("Function", new Empty(), name);
+    }
+    public static ASTNode<Empty, String> Function(Parser p, SymbolTable scopeTable, Type define, Type... args) throws CompileException {
+        String name = p.eat(Type.ID);
+
+        if (scopeTable.fcontains(name)/*&& p.t.get(name).scope == scope*/)
             throw new DuplicateIdException(p.l.getPos(), name);
         
-        if (define != null)
-            scopeTable.fput(name, new VarData(define));
+        scopeTable.fput(name, new FuncData(define, args));
+        
+        return new ASTNode<Empty, String>("Function", new Empty(), name);
+    }
+    public static ASTNode<Empty, String> Function(Parser p, SymbolTable scopeTable, List<Type> define, List<Type> args) throws CompileException {
+        String name = p.eat(Type.ID);
+
+        if (scopeTable.fcontains(name)/*&& p.t.get(name).scope == scope*/)
+            throw new DuplicateIdException(p.l.getPos(), name);
+        
+        scopeTable.fput(name, new FuncData(define, args));
         
         return new ASTNode<Empty, String>("Function", new Empty(), name);
     }
