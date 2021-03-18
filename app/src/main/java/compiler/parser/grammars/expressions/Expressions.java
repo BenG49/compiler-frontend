@@ -5,11 +5,11 @@ import java.util.List;
 
 import compiler.Empty;
 import compiler.exception.semantics.InvalidTypeException;
+import compiler.exception.semantics.ReturnArgCountException;
 import compiler.exception.CompileException;
 import compiler.syntax.Type;
 import compiler.parser.Parser;
 import compiler.parser.grammars.ast.*;
-import compiler.semantics.VarData;
 
 public class Expressions {
     /**
@@ -120,7 +120,8 @@ public class Expressions {
         
         p.eat(Type.RPAREN);
         p.eat(Type.LB);
-        out.add(BlockStatementList(p));
+        // TODO: add support for returning tuples
+        out.add(BlockStatementList(p, new Type[] {(Type)out.get(0).branches.get(0)}));
         p.eat(Type.RB);
 
         return new ASTNode<String, ASTNode<?, ?>>(
@@ -177,13 +178,13 @@ public class Expressions {
     /**
      * blockstatementlist := statement... RB
      */
-    public static ASTNode<String, ASTNode<?, ?>> BlockStatementList(Parser p) throws CompileException {
+    public static ASTNode<String, ASTNode<?, ?>> BlockStatementList(Parser p, Type[] returnType) throws CompileException {
         List<ASTNode<?, ?>> statements = new ArrayList<ASTNode<?, ?>>();
         Type nextType = p.l.nextType();
         while (nextType != Type.RB) {
             ASTNode<?, ?> temp;
-            if (nextType == Type.RETURN)
-                temp = ReturnStatement(p);
+            if (returnType != null && nextType == Type.RETURN)
+                temp = ReturnStatement(p, returnType);
             else
                 temp = Statement(p);
 
@@ -205,24 +206,50 @@ public class Expressions {
      *                      | truefalseliteral
      *                      | stringliteral
      *                      | variable
-     *                      
+     *                      | functioncall
      *                        ""
      *                      | COMMA)...
      */
-    public static ASTNode<Type, ASTNode<?, ?>> ReturnStatement(Parser p) throws CompileException {
+    public static ASTNode<Type, ASTNode<?, ?>> ReturnStatement(Parser p, Type[] returnType) throws CompileException {
         List<ASTNode<?, ?>> out = new ArrayList<ASTNode<?, ?>>();
         p.eat(Type.RETURN);
 
         Type nextType = p.l.nextType();
-        while (nextType != Type.NEWLINE) {
-            if (nextType.within(Type.TRUE, Type.FALSE))
-                out.add(Values.TrueFalseLiteral(p));
-            else if (nextType.within(Type.STR))
-                out.add(Values.StringLiteral(p));
-            else if (nextType.within(Type.ID))
-                out.add(Values.Variable(p));
-            else
-                out.add(BinExp.BinaryExpression(p));
+        for (int var = 1; nextType != Type.NEWLINE; var++) {
+            if (var > returnType.length)
+                throw new ReturnArgCountException(p.l.getPos(), returnType.length, var);
+
+            if (nextType.within(Type.TRUE, Type.FALSE)) {
+                if (returnType[var-1] == Type.BOOL_ID)
+                    out.add(Values.TrueFalseLiteral(p));
+                else
+                    throw new InvalidTypeException(p.l.getPos(), nextType, returnType[var-1]);
+            } else if (nextType.within(Type.STR)) {
+                if (returnType[var-1] == Type.STR_ID)
+                    out.add(Values.StringLiteral(p));
+                else
+                    throw new InvalidTypeException(p.l.getPos(), nextType, returnType[var-1]);
+            } else if (nextType.within(Type.ID)) {
+                Type returned;
+                ASTNode<?, ?> temp;
+                if (p.l.nextType(2) == Type.LPAREN) {
+                    temp = FunctionCall(p);
+                    returned = p.f.get((String)((ASTNode<?, ?>)temp.branches.get(0)).branches.get(0)).type;
+                } else {
+                    temp = Values.Variable(p);
+                    returned = p.v.get((String)temp.branches.get(0)).type;
+                }
+                
+                if (returnType[var-1] != returned)
+                    throw new InvalidTypeException(p.l.getPos(), (temp.name.equals("Function")?Type.FUNC:returned), returnType[var-1]);
+
+                out.add(temp);
+            } else {
+                if (returnType[var-1].within(Type.INT_ID, Type.FLOAT_ID))
+                    out.add(BinExp.BinaryExpression(p));
+                else
+                    throw new InvalidTypeException(p.l.getPos(), nextType, returnType[var-1]);
+            }
             
             nextType = p.l.nextType();
 
@@ -249,7 +276,7 @@ public class Expressions {
         out.add(BoolExp.BoolExpression(p));
         p.eat(Type.RPAREN);
         p.eat(Type.LB);
-        out.add(BlockStatementList(p));
+        out.add(BlockStatementList(p, null));
         p.eat(Type.RB);
 
         return new ASTNode<Type, ASTNode<?, ?>>(
@@ -294,7 +321,7 @@ public class Expressions {
 
         p.eat(Type.RPAREN);
         p.eat(Type.LB);
-        out.add(BlockStatementList(p));
+        out.add(BlockStatementList(p, null));
         p.eat(Type.RB);
 
         return new ASTNode<Type, ASTNode<?, ?>>(
@@ -368,8 +395,8 @@ public class Expressions {
                 assignment = (String)temp.branches.get(0);
             }
 
-            if (p.t.get(name).type != p.t.get(assignment).type)
-                throw new InvalidTypeException(p.l.getPos(), p.t.get(assignment).type, p.t.get(name).type);
+            if (p.v.get(name).type != p.v.get(assignment).type)
+                throw new InvalidTypeException(p.l.getPos(), p.v.get(assignment).type, p.v.get(name).type);
             
             out.add(temp);
         // binaryexpression
@@ -424,8 +451,8 @@ public class Expressions {
                 }
 
                 String varName = (String)out.get(0).branches.get(0);
-                if (p.t.get(varName).type != p.t.get(assignment).type)
-                    throw new InvalidTypeException(p.l.getPos(), p.t.get(assignment).type, p.t.get(varName).type);
+                if (p.v.get(varName).type != p.v.get(assignment).type)
+                    throw new InvalidTypeException(p.l.getPos(), p.v.get(assignment).type, p.v.get(varName).type);
                 
                 out.add(temp);
                 
@@ -474,7 +501,7 @@ public class Expressions {
         p.eat(Type.RPAREN);
 
         p.eat(Type.LB);
-        out.add(BlockStatementList(p));
+        out.add(BlockStatementList(p, null));
         p.eat(Type.RB);
         
         Type nextType = p.l.nextType();
@@ -489,7 +516,7 @@ public class Expressions {
             // LB blockstatementlist RB
             else {
                 p.eat(Type.LB);
-                out.add(BlockStatementList(p));
+                out.add(BlockStatementList(p, null));
                 p.eat(Type.RB);
             }
         }

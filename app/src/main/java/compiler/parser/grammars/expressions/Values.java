@@ -116,17 +116,17 @@ public class Values {
     }
     public static ASTNode<Empty, String> Variable(Parser p, Type define) throws CompileException {
         String name = p.eat(Type.ID);
-        boolean contains = p.t.contains(name);
+        boolean contains = p.v.contains(name);
 
-        if (define == null && (!contains || contains && p.t.get(name).function))
+        if (define == null && !contains)
             throw new UndefinedIdException(p.l.getPos(), name);
         
         // special case, functions and vars can have the same name
-        if (define != null && contains && !p.t.get(name).function /*&& p.t.get(name).scope == scope*/)
+        if (define != null && contains/*&& p.t.get(name).scope == scope*/)
             throw new DuplicateIdException(p.l.getPos(), name);
         
         if (define != null)
-            p.t.put(name, new VarData(define, "", false));
+            p.v.put(name, new VarData(define, ""));
 
         return new ASTNode<Empty, String>("Identifier", new Empty(), name);
     }
@@ -139,17 +139,16 @@ public class Values {
     }
     public static ASTNode<Empty, String> Function(Parser p, Type define) throws CompileException {
         String name = p.eat(Type.ID);
-        boolean contains = p.t.contains(name);
+        boolean contains = p.f.contains(name);
 
-        if (define == null && (!contains || contains && !p.t.get(name).function))
+        if (define == null && !contains)
             throw new UndefinedIdException(p.l.getPos(), name);
         
-        // special case, functions and vars can have the same name
-        if (define != null && contains && p.t.get(name).function /*&& p.t.get(name).scope == scope*/)
+        if (define != null && contains/*&& p.t.get(name).scope == scope*/)
             throw new DuplicateIdException(p.l.getPos(), name);
         
         if (define != null)
-            p.t.put(name, new VarData(define, "", true));
+            p.f.put(name, new VarData(define, ""));
         
         return new ASTNode<Empty, String>("Function", new Empty(), name);
     }

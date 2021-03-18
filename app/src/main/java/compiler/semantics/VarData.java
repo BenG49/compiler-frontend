@@ -5,15 +5,13 @@ import compiler.syntax.Type;
 public class VarData {
     public Type type;
     public String scope;
-    public boolean function;
 
-    public VarData (Type type, String scope, boolean function) {
+    public VarData (Type type, String scope) {
         this.type = type;
         this.scope = scope;
-        this.function = function;
     }
 
     public String toString() {
-        return "("+type+", "+scope+", "+function+")";
+        return "("+type+", "+scope+")";
     }
 }

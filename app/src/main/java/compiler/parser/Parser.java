@@ -13,7 +13,8 @@ import compiler.parser.grammars.expressions.Expressions;
 public class Parser {
     public String s;
     public Lexer l;
-    public SymbolTable t;
+    public SymbolTable v;
+    public SymbolTable f;
 
     public Parser(String s) {
         this.s = s;
@@ -21,7 +22,8 @@ public class Parser {
 
     public ASTNode<?, ?> parse() throws CompileException {
         l = new Lexer(s);
-        t = new SymbolTable();
+        v = new SymbolTable();
+        f = new SymbolTable();
 
         return Expressions.Program(this);
     }

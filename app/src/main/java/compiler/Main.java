@@ -5,6 +5,7 @@ import compiler.lexer.Lexer;
 import compiler.parser.Parser;
 
 public class Main {
+    // TODO: add scope where each function adds to a list and removes when it returns
     public static void main(String... args) {
         try {
             // testLexer(args[0]);
