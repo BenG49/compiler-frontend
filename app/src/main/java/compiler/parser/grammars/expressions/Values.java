@@ -7,11 +7,12 @@ import java.util.List;
 import compiler.Empty;
 import compiler.exception.parse.*;
 import compiler.exception.semantics.DuplicateIdException;
-import compiler.exception.semantics.UndefinedIdException;
+import compiler.exception.semantics.UnknownIDException;
 import compiler.exception.CompileException;
 import compiler.parser.Parser;
 import compiler.parser.grammars.ast.*;
 import compiler.semantics.VarData;
+import compiler.syntax.SymbolTable;
 import compiler.syntax.Type;
 
 public class Values {
@@ -111,22 +112,22 @@ public class Values {
     /**
      * identifier := ID
      */
-    public static ASTNode<Empty, String> Variable(Parser p) throws CompileException {
-        return Variable(p, null);
+    public static ASTNode<Empty, String> Variable(Parser p, SymbolTable scopeTable) throws CompileException {
+        return Variable(p, scopeTable, null);
     }
-    public static ASTNode<Empty, String> Variable(Parser p, Type define) throws CompileException {
+    public static ASTNode<Empty, String> Variable(Parser p, SymbolTable scopeTable, Type define) throws CompileException {
         String name = p.eat(Type.ID);
-        boolean contains = p.v.contains(name);
+        boolean contains = scopeTable.vcontains(name);
 
         if (define == null && !contains)
-            throw new UndefinedIdException(p.l.getPos(), name);
+            throw new UnknownIDException(p.l.getPos(), name);
         
         // special case, functions and vars can have the same name
         if (define != null && contains/*&& p.t.get(name).scope == scope*/)
             throw new DuplicateIdException(p.l.getPos(), name);
         
         if (define != null)
-            p.v.put(name, new VarData(define, ""));
+            scopeTable.vput(name, new VarData(define));
 
         return new ASTNode<Empty, String>("Identifier", new Empty(), name);
     }
@@ -134,21 +135,21 @@ public class Values {
     /**
      * function := FUNC
      */
-    public static ASTNode<Empty, String> Function(Parser p) throws CompileException {
-        return Function(p, null);
+    public static ASTNode<Empty, String> Function(Parser p, SymbolTable scopeTable) throws CompileException {
+        return Function(p, scopeTable, null);
     }
-    public static ASTNode<Empty, String> Function(Parser p, Type define) throws CompileException {
+    public static ASTNode<Empty, String> Function(Parser p, SymbolTable scopeTable, Type define) throws CompileException {
         String name = p.eat(Type.ID);
-        boolean contains = p.f.contains(name);
+        boolean contains = scopeTable.fcontains(name);
 
         if (define == null && !contains)
-            throw new UndefinedIdException(p.l.getPos(), name);
+            throw new UnknownIDException(p.l.getPos(), name);
         
         if (define != null && contains/*&& p.t.get(name).scope == scope*/)
             throw new DuplicateIdException(p.l.getPos(), name);
         
         if (define != null)
-            p.f.put(name, new VarData(define, ""));
+            scopeTable.fput(name, new VarData(define));
         
         return new ASTNode<Empty, String>("Function", new Empty(), name);
     }
