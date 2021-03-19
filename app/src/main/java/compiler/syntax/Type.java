@@ -56,7 +56,9 @@ public enum Type {
     ID(     p("[A-z]+[A-z\\d]*")),
 
     // parsing types (do not match to anything)
-    FUNC(p("a^"));
+    FUNC(p("a^")),
+    CALL(p("a^")),
+    BLANK(p("a^"));
 
     private static final EnumSet<Type> allOf;
 
@@ -80,8 +82,12 @@ public enum Type {
         return allOf;
     }
 
+    // TODO: don't make new type list every single time
     public static Type[] getVarTypes() {
         return new Type[] { INT_ID, FLOAT_ID, STR_ID, BOOL_ID };
+    }
+    public static Type[] getLiterals() {
+        return new Type[] { INT, FLOAT, STR, TRUE, FALSE, ID };
     }
 
     public boolean within(Type... types) {

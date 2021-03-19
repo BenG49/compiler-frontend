@@ -19,14 +19,14 @@ public class Parser {
         this.s = s;
     }
 
-    public ASTNode<?, ?> parse() throws CompileException {
+    public ASTNode<?> parse() throws CompileException {
         l = new Lexer(s);
 
         return Expressions.Program(this, new SymbolTable());
     }
 
-    public List<String> eatMultiple(Type... type) throws CompileException {
-        List<String> out = new ArrayList<String>();
+    public List<Token> eatMultiple(Type... type) throws CompileException {
+        List<Token> out = new ArrayList<Token>();
 
         for (Type t:type)
             out.add(eat(t));
@@ -34,11 +34,11 @@ public class Parser {
         return out;
     }
 
-    public String eat(List<Type> type) throws CompileException {
+    public Token eat(List<Type> type) throws CompileException {
         Type[] array = new Type[type.size()];
         return eat(type.toArray(array));
     }
-    public String eat(Type... type) throws CompileException {
+    public Token eat(Type... type) throws CompileException {
         Token token = l.next();
         if (token == null)
             throw new EOFException(type+"");
@@ -50,8 +50,9 @@ public class Parser {
         }
 
         if (!match)
-            throw new TokenTypeException(token.type, type, l.getPos());
+            throw new TokenTypeException(token.type, type, token.index);
         
-        return token.value;
+        return token;
     }
+
 }

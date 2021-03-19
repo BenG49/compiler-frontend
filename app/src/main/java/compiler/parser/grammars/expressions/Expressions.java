@@ -3,7 +3,6 @@ package compiler.parser.grammars.expressions;
 import java.util.ArrayList;
 import java.util.List;
 
-import compiler.Empty;
 import compiler.exception.semantics.InvalidTypeException;
 import compiler.exception.semantics.MismatchedArgCountException;
 import compiler.exception.semantics.ReturnArgCountException;
@@ -17,27 +16,25 @@ public class Expressions {
     /**
      * program := statementlist
      */
-    public static ASTNode<String, ASTNode<?, ?>> Program(Parser p, SymbolTable t) throws CompileException {
-        return new ASTNode<String, ASTNode<?, ?>>(
-            "Program", "",
-            StatementList(p, t)
+    public static ASTNode<ASTNode<?>> Program(Parser p, SymbolTable t) throws CompileException {
+        return new ASTNode<ASTNode<?>>(
+            "Program", Type.BLANK, StatementList(p, t)
         );
     }
 
     /**
      * statementlist := statement...
      */
-    public static ASTNode<String, ASTNode<?, ?>> StatementList(Parser p, SymbolTable t) throws CompileException {
-        List<ASTNode<?, ?>> statements = new ArrayList<ASTNode<?, ?>>();
+    public static ASTNode<ASTNode<?>> StatementList(Parser p, SymbolTable t) throws CompileException {
+        List<ASTNode<?>> statements = new ArrayList<ASTNode<?>>();
         while (p.l.hasNext()) {
-            ASTNode<?, ?> temp = Statement(p, t);
+            ASTNode<?> temp = Statement(p, t);
             if (temp != null)
                 statements.add(temp);
         }
 
-        return new ASTNode<String, ASTNode<?, ?>>(
-            "StatementList", "",
-            statements
+        return new ASTNode<ASTNode<?>>(
+            "StatementList", Type.BLANK, statements
         );
     }
 
@@ -52,8 +49,8 @@ public class Expressions {
      *                | ""
      *              NEWLINE
      */
-    public static ASTNode<?, ?> Statement(Parser p, SymbolTable t) throws CompileException {
-        ASTNode<?, ?> out;
+    public static ASTNode<?> Statement(Parser p, SymbolTable t) throws CompileException {
+        ASTNode<?> out;
         Type nextType = p.l.nextType();
 
         // ifstatement
@@ -96,22 +93,21 @@ public class Expressions {
      *                            declarestatement...
      *                       RPAREN LB blockstatementlist RB
      */
-    public static ASTNode<String, ASTNode<?, ?>> FunctionDeclaration(Parser p, SymbolTable t) throws CompileException {
-        List<ASTNode<?, ?>> out = new ArrayList<ASTNode<?, ?>>();
+    public static ASTNode<ASTNode<?>> FunctionDeclaration(Parser p, SymbolTable t) throws CompileException {
+        List<ASTNode<?>> out = new ArrayList<ASTNode<?>>();
 
         out.add(Values.ReturnTypeLiteral(p));
         out.add(Values.Function(p, t, (Type)out.get(0).branches.get(0)));
         p.eat(Type.LPAREN);
 
         SymbolTable innerScope = new SymbolTable(t);
-        String name = (String)out.get(1).branches.get(0);
 
         Type nextType = p.l.nextType();
         while (nextType != Type.RPAREN) {
-            ASTNode<Empty, Type> type = Values.VarTypeLiteral(p);
-            ASTNode<Empty, String> var = Values.Variable(p, innerScope, (Type)out.get(0).branches.get(0));
+            ASTNode<String> type = Values.VarTypeLiteral(p);
+            ASTNode<String> var = Values.Variable(p, innerScope, (Type)out.get(0).branches.get(0));
 
-            out.add(new ASTNode<Type, ASTNode<?, ?>>(
+            out.add(new ASTNode<ASTNode<?>>(
                 "DeclareStatement", Type.EQUAL,
                 type, var
             ));
@@ -126,8 +122,8 @@ public class Expressions {
         out.add(BlockStatementList(p, innerScope, new Type[] {(Type)out.get(0).branches.get(0)}));
         p.eat(Type.RB);
 
-        return new ASTNode<String, ASTNode<?, ?>>(
-            "FunctionDeclaration", name,
+        return new ASTNode<ASTNode<?>>(
+            "FunctionDeclaration", Type.FUNC,
             out
         );
     }
@@ -142,8 +138,8 @@ public class Expressions {
      *                 ...
      *                 RPAREN
      */
-    public static ASTNode<String, ASTNode<?, ?>> FunctionCall(Parser p, SymbolTable t) throws CompileException {
-        List<ASTNode<?, ?>> out = new ArrayList<ASTNode<?, ?>>();
+    public static ASTNode<ASTNode<?>> FunctionCall(Parser p, SymbolTable t) throws CompileException {
+        List<ASTNode<?>> out = new ArrayList<ASTNode<?>>();
         out.add(Values.Function(p, t));
         p.eat(Type.LPAREN);
 
@@ -153,7 +149,7 @@ public class Expressions {
 
         // TODO: check function type, add functions to vardata
         for (int i = 0; i < argCount; i++) {
-            out.add(VarAssignment(p, t, t.fget(name).args.get(i)));
+            out.add(Literal(p, t, t.fget(name).args.get(i)));
 
             nextType = p.l.nextType();
             if (nextType == Type.COMMA)
@@ -163,8 +159,8 @@ public class Expressions {
         }
         p.eat(Type.RPAREN);
 
-        return new ASTNode<String, ASTNode<?, ?>>(
-            "FunctionCall", (String)out.get(0).branches.get(0),
+        return new ASTNode<ASTNode<?>>(
+            "FunctionCall", Type.CALL,//(String)out.get(0).branches.get(0),
             out
         );
     }
@@ -172,11 +168,11 @@ public class Expressions {
     /**
      * blockstatementlist := statement... RB
      */
-    public static ASTNode<String, ASTNode<?, ?>> BlockStatementList(Parser p, SymbolTable t, Type[] returnType) throws CompileException {
-        List<ASTNode<?, ?>> statements = new ArrayList<ASTNode<?, ?>>();
+    public static ASTNode<ASTNode<?>> BlockStatementList(Parser p, SymbolTable t, Type[] returnType) throws CompileException {
+        List<ASTNode<?>> statements = new ArrayList<ASTNode<?>>();
         Type nextType = p.l.nextType();
         while (nextType != Type.RB) {
-            ASTNode<?, ?> temp;
+            ASTNode<?> temp;
             if (returnType != null && nextType == Type.RETURN)
                 temp = ReturnStatement(p, t, returnType);
             else
@@ -188,8 +184,8 @@ public class Expressions {
             nextType = p.l.nextType();
         }
 
-        return new ASTNode<String, ASTNode<?, ?>>(
-            "BlockStatementList", "",
+        return new ASTNode<ASTNode<?>>(
+            "BlockStatementList", Type.BLANK,
             statements
         );
     }
@@ -204,51 +200,16 @@ public class Expressions {
      *                        ""
      *                      | COMMA)...
      */
-    public static ASTNode<Type, ASTNode<?, ?>> ReturnStatement(Parser p, SymbolTable t, Type[] returnType) throws CompileException {
-        List<ASTNode<?, ?>> out = new ArrayList<ASTNode<?, ?>>();
+    public static ASTNode<ASTNode<?>> ReturnStatement(Parser p, SymbolTable t, Type[] returnType) throws CompileException {
+        List<ASTNode<?>> out = new ArrayList<ASTNode<?>>();
         p.eat(Type.RETURN);
 
         Type nextType = p.l.nextType();
         for (int var = 1; var <= returnType.length; var++) {
             if (var > returnType.length)
-                throw new ReturnArgCountException(p.l.getPos(), returnType.length, var);
-
-            if (nextType.within(Type.TRUE, Type.FALSE)) {
-                if (returnType[var-1] == Type.BOOL_ID)
-                    out.add(Values.TrueFalseLiteral(p));
-                else
-                    throw new InvalidTypeException(p.l.getPos(), nextType, returnType[var-1]);
-            } else if (nextType.within(Type.STR)) {
-                if (returnType[var-1] == Type.STR_ID)
-                    out.add(Values.StringLiteral(p));
-                else
-                    throw new InvalidTypeException(p.l.getPos(), nextType, returnType[var-1]);
-            } else if (nextType.within(Type.ID)) {
-                Type returned;
-                ASTNode<?, ?> temp;
-                if (p.l.nextType(2) == Type.LPAREN) {
-                    temp = FunctionCall(p, t);
-                    // TODO: did not test this, not sure if it worked or not
-                    List<Type> returnTypes = t.fget((String)((ASTNode<?, ?>)temp.branches.get(0)).branches.get(0)).type;
-                    if (returnTypes.size() == 1)
-                        returned = returnTypes.get(0);
-                    else
-                        throw new MismatchedArgCountException(p.l.getPos(), returnType.length, returnTypes.size()+var);
-                } else {
-                    temp = Values.Variable(p, t);
-                    returned = t.vget((String)temp.branches.get(0)).type;
-                }
-                
-                if (returnType[var-1] != returned)
-                    throw new InvalidTypeException(p.l.getPos(), (temp.name.equals("Function")?Type.FUNC:returned), returnType[var-1]);
-
-                out.add(temp);
-            } else {
-                if (returnType[var-1].within(Type.INT_ID, Type.FLOAT_ID))
-                    out.add(BinExp.BinaryExpression(p, t));
-                else
-                    throw new InvalidTypeException(p.l.getPos(), nextType, returnType[var-1]);
-            }
+                throw new ReturnArgCountException(p.l.next().index, returnType.length, var);
+            
+            out.add(Literal(p, t, returnType[var-1]));
             
             nextType = p.l.nextType();
 
@@ -258,7 +219,7 @@ public class Expressions {
             }
         }
 
-        return new ASTNode<Type, ASTNode<?, ?>>(
+        return new ASTNode<ASTNode<?>>(
             "ReturnStatement", Type.RETURN,
             out
         );
@@ -267,18 +228,16 @@ public class Expressions {
     /**
      * whilestatement := WHILE LPAREN boolexpression RPAREN LB blockstatementlist RB
      */
-    public static ASTNode<Type, ASTNode<?, ?>> WhileStatement(Parser p, SymbolTable t) throws CompileException {
-        List<ASTNode<?, ?>> out = new ArrayList<ASTNode<?, ?>>();
+    public static ASTNode<ASTNode<?>> WhileStatement(Parser p, SymbolTable t) throws CompileException {
+        List<ASTNode<?>> out = new ArrayList<ASTNode<?>>();
 
-        p.eat(Type.WHILE);
-        p.eat(Type.LPAREN);
+        p.eatMultiple(Type.WHILE, Type.LPAREN);
         out.add(BoolExp.BoolExpression(p, t));
-        p.eat(Type.RPAREN);
-        p.eat(Type.LB);
+        p.eatMultiple(Type.RPAREN, Type.LB);
         out.add(BlockStatementList(p, new SymbolTable(t), null));
         p.eat(Type.RB);
 
-        return new ASTNode<Type, ASTNode<?, ?>>(
+        return new ASTNode<ASTNode< ?>>(
             "WhileExpression", Type.WHILE,
             out
         );
@@ -297,11 +256,10 @@ public class Expressions {
      *                   | vartypeliteral variable IN iterable
      *                 RPAREN LB blockstatementlist RB
      */
-    public static ASTNode<Type, ASTNode<?, ?>> ForStatement(Parser p, SymbolTable t) throws CompileException {
-        List<ASTNode<?, ?>> out = new ArrayList<ASTNode<?, ?>>();
+    public static ASTNode<ASTNode<?>> ForStatement(Parser p, SymbolTable t) throws CompileException {
+        List<ASTNode<?>> out = new ArrayList<ASTNode<?>>();
 
-        p.eat(Type.FOR);
-        p.eat(Type.LPAREN);
+        p.eatMultiple(Type.FOR, Type.LPAREN);
         
         // TODO: add case for iterable
         Type nextType = p.l.nextType();
@@ -318,12 +276,11 @@ public class Expressions {
         if (nextType != Type.RPAREN)
             out.add(AssignStatement(p, t));
 
-        p.eat(Type.RPAREN);
-        p.eat(Type.LB);
+        p.eatMultiple(Type.RPAREN, Type.LB);
         out.add(BlockStatementList(p, new SymbolTable(t), null));
         p.eat(Type.RB);
 
-        return new ASTNode<Type, ASTNode<?, ?>>(
+        return new ASTNode<ASTNode<?>>(
             "ForStatement", Type.FOR,
             out
         );
@@ -341,8 +298,8 @@ public class Expressions {
      *                           | functioncall
      *                             ""
      */
-    public static ASTNode<?, ?> DeclareStatement(Parser p, SymbolTable t) throws CompileException {
-        List<ASTNode<?, ?>> out = new ArrayList<ASTNode<?, ?>>();
+    public static ASTNode<?> DeclareStatement(Parser p, SymbolTable t) throws CompileException {
+        List<ASTNode<?>> out = new ArrayList<ASTNode<?>>();
         Type varType = p.l.nextType();
         // type
         out.add(Values.VarTypeLiteral(p));
@@ -356,20 +313,20 @@ public class Expressions {
                 nextType = p.l.nextType();
             }
 
-            return new ASTNode<Type, ASTNode<?, ?>>(
+            return new ASTNode<ASTNode<?>>(
                 "DeclareStatement", Type.EQUAL,
                 out);
         } else if (nextType == Type.NEWLINE)
-            return new ASTNode<Type, ASTNode<?, ?>>(
+            return new ASTNode<ASTNode<?>>(
                 "DeclareStatement", Type.EQUAL,
                 out);
 
         // EQUALS
         p.eat(Type.EQUAL);
         
-        out.add(VarAssignment(p, t, varType));
+        out.add(Literal(p, t, varType));
         
-        return new ASTNode<Type, ASTNode<?, ?>>(
+        return new ASTNode<ASTNode<?>>(
             "DeclareStatement", Type.EQUAL,
             out
         );
@@ -382,8 +339,8 @@ public class Expressions {
      *                            ""
      *                          | binaryexpression
      */
-    public static ASTNode<Type, ASTNode<?, ?>> AssignStatement(Parser p, SymbolTable t) throws CompileException {
-        List<ASTNode<?, ?>> out = new ArrayList<ASTNode<?, ?>>();
+    public static ASTNode<ASTNode<?>> AssignStatement(Parser p, SymbolTable t) throws CompileException {
+        List<ASTNode<?>> out = new ArrayList<ASTNode<?>>();
         // variable
         out.add(Values.Variable(p, t));
 
@@ -393,12 +350,12 @@ public class Expressions {
         if (nextType == Type.EQUAL) {
             p.eat(Type.EQUAL);
 
-            out.add(VarAssignment(p, t, varType));
+            out.add(Literal(p, t, varType));
         // TODO: add string addition
         } else if (varType.within(Type.FLOAT_ID, Type.INT_ID)) {
             Type[] temp = Operators.AssignOperator(p);
-            // temp list to add to manual addition node
-            List<ASTNode<?, ?>> addNode = new ArrayList<ASTNode<?, ?>>();
+            // temp list to add to manual addition node (ex 1++ -> + 1 1)
+            List<ASTNode<?>> addNode = new ArrayList<ASTNode<?>>();
 
             addNode.add(out.get(0));
             // +=
@@ -407,15 +364,15 @@ public class Expressions {
                 addNode.add(BinExp.BinaryExpression(p, t));
             // ++
             else
-                addNode.add(new ASTNode<Empty, Integer>("IntLiteral", new Empty(), 1));
+                addNode.add(new ASTNode<Integer>("IntLiteral", Type.INT, 1));
             
-            out.add(new ASTNode<Type, ASTNode<?, ?>>(
+            out.add(new ASTNode<ASTNode<?>>(
                 "BinaryExpression", temp[0],
                 addNode
             ));
         }
         
-        return new ASTNode<Type, ASTNode<?, ?>>(
+        return new ASTNode<ASTNode<?>>(
             "AssignStatement", Type.EQUAL,
             out
         );
@@ -428,20 +385,20 @@ public class Expressions {
      *                | truefalseliteral
      *                | binaryexpression
      */
-    public static ASTNode<?, ?> VarAssignment(Parser p, SymbolTable t, Type varType) throws CompileException {
+    public static ASTNode<?> Literal(Parser p, SymbolTable t, Type varType) throws CompileException {
         if (p.l.nextType() == Type.ID) {
-            ASTNode<?, ?> temp;
+            ASTNode<?> temp;
             String assignment;
             if (p.l.nextType(2) == Type.LPAREN) {
                 temp = FunctionCall(p, t);
-                assignment = (String)((ASTNode<?, ?>)temp.branches.get(0)).branches.get(0);
+                assignment = (String)((ASTNode<?>)temp.branches.get(0)).branches.get(0);
             } else {
                 temp = Values.Variable(p, t);
                 assignment = (String)temp.branches.get(0);
             }
 
             if (varType != t.vget(assignment).type)
-                throw new InvalidTypeException(p.l.getPos(), t.vget(assignment).type, varType);
+                throw new InvalidTypeException(p.l.next().index, t.vget(assignment).type, varType);
             
             return temp;
         }
@@ -452,10 +409,11 @@ public class Expressions {
         // truefalseliteal
         else if (varType == Type.BOOL_ID)
             return Values.TrueFalseLiteral(p);
+        // binaryexpression
         else if (varType.within(Type.INT_ID, Type.FLOAT_ID))
             return BinExp.BinaryExpression(p, t);
         else
-            throw new InvalidTypeException(p.l.getPos(), p.l.nextType(), varType);
+            throw new InvalidTypeException(p.l.next().index, p.l.nextType(), varType);
     }
 
     /**
@@ -464,8 +422,8 @@ public class Expressions {
      *                  | ELSE LB blockstatementlist RB
      *                  | ELSE ifstatement
      */
-    public static ASTNode<Type, ASTNode<?, ?>> IfStatement(Parser p, SymbolTable t) throws CompileException {
-        List<ASTNode<?, ?>> out = new ArrayList<ASTNode<?, ?>>();
+    public static ASTNode<ASTNode<?>> IfStatement(Parser p, SymbolTable t) throws CompileException {
+        List<ASTNode<?>> out = new ArrayList<ASTNode<?>>();
 
         p.eatMultiple(Type.IF, Type.LPAREN);
         out.add(BoolExp.BoolExpression(p, t));
@@ -490,7 +448,7 @@ public class Expressions {
             }
         }
         
-        return new ASTNode<Type, ASTNode<?, ?>>(
+        return new ASTNode<ASTNode<?>>(
             "IfStatement", Type.IF,
             out
         );

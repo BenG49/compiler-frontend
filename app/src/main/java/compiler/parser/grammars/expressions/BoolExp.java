@@ -11,13 +11,13 @@ public class BoolExp {
      * boolexpression := boolterm andoroperator boolexpression
      *                 | boolterm
      */
-    public static ASTNode<?, ?> BoolExpression(Parser p, SymbolTable t) throws CompileException {
-        ASTNode<?, ?> temp = BoolTerm(p, t);
+    public static ASTNode<?> BoolExpression(Parser p, SymbolTable t) throws CompileException {
+        ASTNode<?> temp = BoolTerm(p, t);
 
         Type nextType = p.l.nextType();
         if (nextType.within(Type.AND, Type.OR)) {
             p.eat(nextType);
-            return new ASTNode<Type, ASTNode<?, ?>>(
+            return new ASTNode<ASTNode<?>>(
                 "BoolExpression", nextType,
                 temp, BoolExpression(p, t)
             );
@@ -30,13 +30,13 @@ public class BoolExp {
      * boolterm := boolfactor compareoperator boolterm
      *           | boolfactor
      */
-    public static ASTNode<?, ?> BoolTerm(Parser p, SymbolTable t) throws CompileException {
-        ASTNode<?, ?> temp = BoolFactor(p, t);
+    public static ASTNode<?> BoolTerm(Parser p, SymbolTable t) throws CompileException {
+        ASTNode<?> temp = BoolFactor(p, t);
 
         Type nextType = p.l.nextType();
         if (nextType.within(Type.EQUIVALENT, Type.GREATER, Type.LESS, Type.GREATER_EQUAL, Type.LESS_EQUAL)) {
             p.eat(nextType);
-            return new ASTNode<Type, ASTNode<?, ?>>(
+            return new ASTNode<ASTNode<?>>(
                 "BoolTerm", nextType,
                 temp, BoolTerm(p, t)
             );
@@ -52,15 +52,14 @@ public class BoolExp {
      *             | truefalseliteral
      *             | variable
      */
-    public static ASTNode<?, ?> BoolFactor(Parser p, SymbolTable t) throws CompileException {
-        final String name = "BoolFactor";
+    public static ASTNode<?> BoolFactor(Parser p, SymbolTable t) throws CompileException {
         Type nextType = p.l.nextType();
 
         // NOT boolfactor
         if (nextType == Type.NOT) {
             p.eat(Type.NOT);
-            return new ASTNode<Type, ASTNode<?, ?>>(
-                name, nextType,
+            return new ASTNode<ASTNode<?>>(
+                "BoolFactor", nextType,
                 BoolFactor(p, t)
             );
         }
@@ -68,7 +67,7 @@ public class BoolExp {
         // LPAREN boolexpression RPAREN
         if (nextType == Type.LPAREN) {
             p.eat(Type.LPAREN);
-            ASTNode<?, ?> temp = BoolExpression(p, t);
+            ASTNode<?> temp = BoolExpression(p, t);
             p.eat(Type.RPAREN);
             return temp;
         }
