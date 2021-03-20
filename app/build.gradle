@@ -29,13 +29,13 @@ dependencies {
 
 application {
     // Define the main class for the application.
-    mainClass = 'interpreter.Main'
+    mainClass = 'compiler.Main'
 }
 
 jar {
     manifest {
         attributes(
-            'Main-Class': 'interpreter.Main'
+            'Main-Class': 'compiler.Main'
         )
     }
 }
