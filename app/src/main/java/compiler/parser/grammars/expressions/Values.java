@@ -40,7 +40,7 @@ public class Values {
         p.eat(temp);
 
         return new ASTNode<Type>(
-            "ReturnTypeLiteral", Type.RETURN, out
+            "ReturnTypeLiteral", out, out
         );
     }
 
@@ -80,7 +80,7 @@ public class Values {
             return FloatLiteral(p);
 
         if (nextType == null)
-            throw new EOFException("Operator");
+            throw new EOFException("Number");
         else
             throw new TokenTypeException(nextType, "NumberLiteral", p.l.next().index);
     }

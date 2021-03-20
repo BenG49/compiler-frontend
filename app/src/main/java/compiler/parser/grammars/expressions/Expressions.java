@@ -96,8 +96,9 @@ public class Expressions {
     public static ASTNode<ASTNode<?>> FunctionDeclaration(Parser p, SymbolTable t) throws CompileException {
         List<ASTNode<?>> out = new ArrayList<ASTNode<?>>();
 
+        // TODO: add support for returning tuples
         out.add(Values.ReturnTypeLiteral(p));
-        out.add(Values.Function(p, t, (Type)out.get(0).branches.get(0)));
+        out.add(Values.Function(p, t, out.get(0).operator));
         p.eat(Type.LPAREN);
 
         SymbolTable innerScope = new SymbolTable(t);
@@ -105,7 +106,7 @@ public class Expressions {
         Type nextType = p.l.nextType();
         while (nextType != Type.RPAREN) {
             ASTNode<String> type = Values.VarTypeLiteral(p);
-            ASTNode<String> var = Values.Variable(p, innerScope, (Type)out.get(0).branches.get(0));
+            ASTNode<String> var = Values.Variable(p, innerScope, out.get(0).operator);
 
             out.add(new ASTNode<ASTNode<?>>(
                 "DeclareStatement", Type.EQUAL,
@@ -118,8 +119,7 @@ public class Expressions {
         }
         
         p.eatMultiple(Type.RPAREN, Type.LB);
-        // TODO: add support for returning tuples
-        out.add(BlockStatementList(p, innerScope, new Type[] {(Type)out.get(0).branches.get(0)}));
+        out.add(BlockStatementList(p, innerScope, new Type[] {out.get(0).operator}));
         p.eat(Type.RB);
 
         return new ASTNode<ASTNode<?>>(
@@ -144,7 +144,7 @@ public class Expressions {
         p.eat(Type.LPAREN);
 
         Type nextType = p.l.nextType();
-        String name = (String)out.get(0).branches.get(0);
+        String name = (String)out.get(0).fst();
         int argCount = t.fget(name).args.size();
 
         // TODO: check function type, add functions to vardata
@@ -384,32 +384,32 @@ public class Expressions {
      *                | truefalseliteral
      *                | binaryexpression
      */
-    public static ASTNode<?> Literal(Parser p, SymbolTable t, Type varType) throws CompileException {
+    public static ASTNode<?> Literal(Parser p, SymbolTable t, Type... varType) throws CompileException {
         if (p.l.nextType() == Type.ID) {
             ASTNode<?> temp;
-            String assignment;
+            Type assignType;
             if (p.l.nextType(2) == Type.LPAREN) {
                 temp = FunctionCall(p, t);
-                assignment = (String)((ASTNode<?>)temp.branches.get(0)).branches.get(0);
+                assignType = temp.operator;
             } else {
                 temp = Values.Variable(p, t);
-                assignment = (String)temp.branches.get(0);
+                assignType = t.vget((String)temp.branches.get(0)).type;
             }
 
-            if (varType != t.vget(assignment).type)
-                throw new InvalidTypeException(p.l.next().index, t.vget(assignment).type, varType);
+            if (!assignType.within(varType))
+                throw new InvalidTypeException(p.l.next().index, assignType, varType);
             
             return temp;
         }
 
         // stringliteral
-        else if (varType == Type.STR_ID)
+        else if (Type.STR_ID.within(varType))
             return Values.StringLiteral(p);
         // truefalseliteal
-        else if (varType == Type.BOOL_ID)
+        else if (Type.BOOL_ID.within(varType))
             return Values.TrueFalseLiteral(p);
         // binaryexpression
-        else if (varType.within(Type.INT_ID, Type.FLOAT_ID))
+        else if (Type.INT_ID.within(varType) || Type.FLOAT_ID.within(varType))
             return BinExp.BinaryExpression(p, t);
         else
             throw new InvalidTypeException(p.l.next().index, p.l.nextType(), varType);
