@@ -17,7 +17,6 @@ plugins {
 repositories {
     // Use JCenter for resolving dependencies.
     jcenter()
-    maven { url "https://jitpack.io" }
 }
 
 dependencies {
@@ -26,8 +25,6 @@ dependencies {
 
     // This dependency is used by the application.
     implementation 'com.google.guava:guava:29.0-jre'
-
-    compile 'com.github.rwl:llvm-j:master-SNAPSHOT'
 }
 
 application {
