@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import compiler.exception.semantics.InvalidTypeException;
-import compiler.exception.semantics.MismatchedArgCountException;
 import compiler.exception.semantics.ReturnArgCountException;
 import compiler.exception.CompileException;
 import compiler.syntax.SymbolTable;
