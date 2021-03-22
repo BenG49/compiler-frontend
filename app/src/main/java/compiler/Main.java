@@ -1,6 +1,5 @@
 package compiler;
 
-import compiler.codegeneration.ASM;
 import compiler.exception.CompileException;
 import compiler.lexer.Lexer;
 import compiler.parser.Parser;
@@ -9,8 +8,7 @@ public class Main {
     public static void main(String... args) {
         try {
             // testLexer(args[0]);
-            // testParser(args[0]);
-            ASM.test();
+            testParser(args[0]);
         } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println("Must give a file path argument!");
         }
