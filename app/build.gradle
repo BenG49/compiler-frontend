@@ -6,8 +6,6 @@
  * User Manual available at https://docs.gradle.org/6.8.1/userguide/building_java_projects.html
  */
 
-buildscript { repositories { mavenCentral() }}
-
 plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     id 'application'
@@ -17,6 +15,7 @@ plugins {
 repositories {
     // Use JCenter for resolving dependencies.
     jcenter()
+    mavenCentral()
 }
 
 dependencies {
@@ -25,6 +24,9 @@ dependencies {
 
     // This dependency is used by the application.
     implementation 'com.google.guava:guava:29.0-jre'
+
+    // ASM
+    implementation 'org.ow2.asm:asm:9.1'
 }
 
 application {
