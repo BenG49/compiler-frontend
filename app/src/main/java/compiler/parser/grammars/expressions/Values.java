@@ -120,10 +120,8 @@ public class Values {
         if (define != null && contains/*&& p.t.get(name).scope == scope*/)
             throw new DuplicateIdException(name.index, name.value);
         
-        if (define != null) {
-            System.out.println(name+", "+define);
+        if (define != null)
             scopeTable.vput(name.value, new VarData(define));
-        }
 
         return new ASTNode<String>("Identifier", Type.ID, name.value);
     }
