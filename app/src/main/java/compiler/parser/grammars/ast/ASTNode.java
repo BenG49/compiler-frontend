@@ -28,7 +28,7 @@ public class ASTNode<E> {
 
         if (isLeaf()) {
             buffer.append(": ");
-            buffer.append(branches.get(0));
+            buffer.append(fst());
             buffer.append("");
         } else if (operator != Type.BLANK) {
             buffer.append("<");

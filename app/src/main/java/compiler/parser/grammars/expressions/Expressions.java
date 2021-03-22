@@ -105,7 +105,7 @@ public class Expressions {
         Type nextType = p.l.nextType();
         while (nextType != Type.RPAREN) {
             ASTNode<String> type = Values.VarTypeLiteral(p);
-            ASTNode<String> var = Values.Variable(p, innerScope, out.get(0).operator);
+            ASTNode<String> var = Values.Variable(p, innerScope, type.operator);
 
             out.add(new ASTNode<ASTNode<?>>(
                 "DeclareStatement", Type.EQUAL,
@@ -159,7 +159,7 @@ public class Expressions {
         p.eat(Type.RPAREN);
 
         return new ASTNode<ASTNode<?>>(
-            "FunctionCall", t.fget(name).type.get(0), out
+            "FunctionCall", t.fget(name).type, out
         );
     }
 
@@ -298,9 +298,10 @@ public class Expressions {
      */
     public static ASTNode<?> DeclareStatement(Parser p, SymbolTable t) throws CompileException {
         List<ASTNode<?>> out = new ArrayList<ASTNode<?>>();
-        Type varType = p.l.nextType();
+        // Type varType = p.l.nextType();
         // type
         out.add(Values.VarTypeLiteral(p));
+        Type varType = out.get(0).operator;
         out.add(Values.Variable(p, t, varType));
 
         Type nextType = p.l.nextType();
@@ -342,7 +343,7 @@ public class Expressions {
         // variable
         out.add(Values.Variable(p, t));
 
-        Type varType = t.vget((String)out.get(0).branches.get(0)).type;
+        Type varType = t.vget((String)out.get(0).fst()).type;
         Type nextType = p.l.nextType();
         // EQUALS
         if (nextType == Type.EQUAL) {
@@ -383,7 +384,7 @@ public class Expressions {
      *                | truefalseliteral
      *                | binaryexpression
      */
-    public static ASTNode<?> Literal(Parser p, SymbolTable t, Type... varType) throws CompileException {
+    public static ASTNode<?> Literal(Parser p, SymbolTable t, Type varType) throws CompileException {
         if (p.l.nextType() == Type.ID) {
             ASTNode<?> temp;
             Type assignType;
@@ -392,23 +393,23 @@ public class Expressions {
                 assignType = temp.operator;
             } else {
                 temp = Values.Variable(p, t);
-                assignType = t.vget((String)temp.branches.get(0)).type;
+                assignType = t.vget((String)temp.fst()).type;
             }
 
-            if (!assignType.within(varType))
+            if (assignType != varType)
                 throw new InvalidTypeException(p.l.next().index, assignType, varType);
             
             return temp;
         }
 
         // stringliteral
-        else if (Type.STR_ID.within(varType))
+        else if (Type.STR_ID == varType)
             return Values.StringLiteral(p);
         // truefalseliteal
-        else if (Type.BOOL_ID.within(varType))
+        else if (Type.BOOL_ID == varType)
             return Values.TrueFalseLiteral(p);
         // binaryexpression
-        else if (Type.INT_ID.within(varType) || Type.FLOAT_ID.within(varType))
+        else if (varType.within(Type.INT_ID, Type.FLOAT_ID))
             return BinExp.BinaryExpression(p, t);
         else
             throw new InvalidTypeException(p.l.next().index, p.l.nextType(), varType);

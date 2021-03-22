@@ -120,8 +120,10 @@ public class Values {
         if (define != null && contains/*&& p.t.get(name).scope == scope*/)
             throw new DuplicateIdException(name.index, name.value);
         
-        if (define != null)
+        if (define != null) {
+            System.out.println(name+", "+define);
             scopeTable.vput(name.value, new VarData(define));
+        }
 
         return new ASTNode<String>("Identifier", Type.ID, name.value);
     }
@@ -137,16 +139,6 @@ public class Values {
         return new ASTNode<String>("Function", Type.ID, name.value);
     }
     public static ASTNode<String> Function(Parser p, SymbolTable scopeTable, Type define, Type... args) throws CompileException {
-        Token name = p.eat(Type.ID);
-
-        if (scopeTable.fcontains(name.value)/*&& p.t.get(name).scope == scope*/)
-            throw new DuplicateIdException(name.index, name.value);
-        
-        scopeTable.fput(name.value, new FuncData(define, args));
-        
-        return new ASTNode<String>("Function", Type.ID, name.value);
-    }
-    public static ASTNode<String> Function(Parser p, SymbolTable scopeTable, List<Type> define, List<Type> args) throws CompileException {
         Token name = p.eat(Type.ID);
 
         if (scopeTable.fcontains(name.value)/*&& p.t.get(name).scope == scope*/)

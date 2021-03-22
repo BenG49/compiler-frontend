@@ -109,7 +109,7 @@ public class BinExp {
                 assignType = temp.operator;
             } else {
                 temp = Values.Variable(p, t);
-                assignType = t.vget((String)temp.branches.get(0)).type;
+                assignType = t.vget((String)temp.fst()).type;
             }
 
             if (!assignType.within(Type.INT_ID, Type.FLOAT_ID))
